@@ -2,8 +2,6 @@
 
 A mobile application for efficiently recording and analyzing street game performance. Track and analyze key metrics like approach count, contact acquisition, same-day dates, and closes (sex) with daily/weekly/monthly/yearly detailed analytics.
 
-![Rizz App](https://placeholder-for-app-screenshot.com/image.jpg)
-
 ## 📱 Key Features
 
 ### MVP Features
@@ -69,7 +67,7 @@ A mobile application for efficiently recording and analyzing street game perform
 
 ### Deployment
 - **Build**: [Expo EAS Build](https://docs.expo.dev/eas/)
-- **Distribution**: 
+- **Distribution**:
   - iOS: App Store Connect
   - Android: Google Play Console
 - **Updates**: [Expo Updates](https://docs.expo.dev/eas-update/introduction/) (OTA)
