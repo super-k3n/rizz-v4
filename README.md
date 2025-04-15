@@ -1,50 +1,249 @@
-# Welcome to your Expo app 👋
+# Rizz - Street Game Performance Tracking App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A mobile application for efficiently recording and analyzing street game performance. Track and analyze key metrics like approach count, contact acquisition, same-day dates, and closes (sex) with daily/weekly/monthly/yearly detailed analytics.
 
-## Get started
+![Rizz App](https://placeholder-for-app-screenshot.com/image.jpg)
 
-1. Install dependencies
+## 📱 Key Features
 
-   ```bash
-   npm install
-   ```
+### MVP Features
 
-2. Start the app
+1. **Basic Counters**
+   - One-tap approach count recording
+   - One-tap contact acquisition recording
+   - One-tap same-day date recording
+   - One-tap close (sex) recording
 
-   ```bash
-    npx expo start
-   ```
+2. **Goal Setting**
+   - Period-based goals (daily, weekly, monthly, yearly)
+   - Visual progress tracking on home screen (progress bars)
 
-In the output, you'll find options to open the app in a
+3. **Detailed Information**
+   - Location, time, and result recording
+   - Edit capabilities for past entries
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+4. **Analytics**
+   - Daily/weekly/monthly/yearly performance aggregation
+   - Visual data representation through graphs
+   - Automatic calculation of contact acquisition rate, close rate, etc.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+5. **Authentication & Settings**
+   - Email & password authentication
+   - Profile settings (username, profile picture)
+   - Social media integration (X/Twitter)
 
-## Get a fresh project
+### Premium Features (Planned for Future)
 
-When you're ready, run:
+1. **Advanced Analytics**
+   - Success rate analysis by time and location
+   - Pattern recognition and improvement suggestions
 
-```bash
-npm run reset-project
+2. **Community Features**
+   - Overall statistics display
+   - Ranking functionality
+   - Anonymous information sharing
+
+3. **Data Management**
+   - Cloud backup
+   - CSV export
+   - Automatic GPS location recording
+
+## 🔧 Technology Stack
+
+### Frontend
+- **Framework**: [Expo](https://expo.dev/) + [React Native](https://reactnative.dev/)
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **UI Library**: [React Native Paper](https://reactnativepaper.com/)
+- **Icons**: [Expo Vector Icons](https://docs.expo.dev/guides/icons/)
+- **Navigation**: [Expo Router](https://docs.expo.dev/router/introduction/)
+- **State Management**: Context API + useReducer
+- **Form Management**: [Formik](https://formik.org/) + [Yup](https://github.com/jquense/yup)
+- **Charts**: [Victory Native](https://formidable.com/open-source/victory/docs/native/)
+
+### Backend
+- **Supabase**: [PostgreSQL](https://www.postgresql.org/)-based backend service
+  - **Authentication**: Supabase Auth
+  - **Database**: PostgreSQL
+  - **Storage**: Supabase Storage
+  - **Security**: Row Level Security (RLS)
+
+### Deployment
+- **Build**: [Expo EAS Build](https://docs.expo.dev/eas/)
+- **Distribution**: 
+  - iOS: App Store Connect
+  - Android: Google Play Console
+- **Updates**: [Expo Updates](https://docs.expo.dev/eas-update/introduction/) (OTA)
+
+## 📂 Project Structure
+
+```
+rizz-app/
+├── .expo/               # Expo configuration files
+├── app/                 # Expo Router (pages)
+│   ├── _layout.tsx      # Layout configuration
+│   ├── index.tsx        # Home screen (counters)
+│   ├── goal/            # Goal setting screen
+│   ├── data/            # Statistics data screen
+│   └── setting/         # Settings screen
+├── src/                 # Source code
+│   ├── components/      # Common components
+│   ├── contexts/        # Context providers
+│   ├── hooks/           # Custom hooks
+│   ├── lib/             # Common libraries
+│   ├── services/        # API integration services
+│   ├── types/           # Type definitions
+│   └── utils/           # Utility functions
+├── assets/              # Images, fonts, and other static files
+├── app.json             # Expo app configuration
+├── eas.json             # EAS build configuration
+├── package.json         # Dependency package configuration
+└── tsconfig.json        # TypeScript configuration
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## 🗃️ Database Structure
 
-## Learn more
+### ER Diagram
+![ER Diagram](https://placeholder-for-er-diagram.com/image.jpg)
 
-To learn more about developing your project with Expo, look at the following resources:
+### Table Structure
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- **users**:
+  - `id`: uuid (PK)
+  - `email`: varchar(255)
+  - `password`: char(32)
+  - `name`: text
+  - `created_at`: timestamp_with_time_zone
 
-## Join the community
+- **daily_records**:
+  - `id`: uuid (PK)
+  - `user_id`: uuid (FK → users.id)
+  - `approached`: int
+  - `get_contact`: int
+  - `instant_date`: int
+  - `instant_cv`: int
+  - `game_area`: text
+  - `game_date`: date
+  - `game_time`: timetz
+  - `created_at`: timestamp_with_time_zone
+  - `updated_at`: timestamp_with_time_zone
 
-Join our community of developers creating universal apps.
+- **goals**:
+  - `id`: uuid (PK)
+  - `user_id`: uuid (FK → users.id)
+  - `period_type`: text ('daily', 'weekly', 'monthly', 'yearly')
+  - `approached_target`: int
+  - `get_contacts_target`: int
+  - `instant_dates_target`: int
+  - `instant_cv_target`: int
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## 🚀 Development Environment Setup
+
+### Prerequisites
+- Node.js 16.x or higher
+- Latest version of npm/Yarn
+- Expo CLI
+- Supabase account
+
+### Setup Steps
+
+1. **Clone the repository**
+```bash
+git clone https://github.com/yourusername/rizz-app.git
+cd rizz-app
+```
+
+2. **Install dependencies**
+```bash
+npm install
+# or
+yarn install
+```
+
+3. **Set up environment variables**
+Copy the `.env.example` file to create `.env` and configure Supabase authentication credentials.
+
+4. **Start the development server**
+```bash
+npm start
+# or
+yarn start
+```
+
+5. **Test with Expo client**
+Scan the generated QR code using the Expo Go app.
+
+## 🔖 API Design
+
+The application uses the following main API endpoints:
+
+### Authentication API
+- User registration
+- Login/Logout
+- Password reset
+
+### User API
+- Profile retrieval/update
+
+### Records API
+- Daily record creation/update
+- Quick count update
+- Period-specific record retrieval
+
+### Goals API
+- Goal setting/update
+- Goal retrieval
+
+### Statistics API
+- Daily/weekly/monthly/yearly statistics retrieval
+
+For detailed API specifications, see the [API Design Document](./docs/api-spec.md).
+
+## 📈 Performance Optimization
+
+- Re-rendering optimization using React Native memoization (useMemo, useCallback)
+- Local caching and synchronization strategy with AsyncStorage
+- Efficient Supabase query design
+
+## 🔒 Security Measures
+
+- Data access control using Supabase RLS
+- Secure authentication based on JWT
+- Input validation through data validation
+
+## 🌐 Offline Support
+
+- Offline data storage with AsyncStorage
+- Synchronization queue for offline changes
+- Network status monitoring and automatic synchronization
+
+## 🏗️ Development Roadmap
+
+### Phase 1: MVP Implementation (4 weeks)
+- Authentication system
+- Basic counter functionality
+- Goal setting and statistics display
+
+### Phase 2: Testing and Bug Fixing (2 weeks)
+- User testing
+- Bug fixes and performance adjustments
+
+### Phase 3: Performance Optimization (2 weeks)
+- Rendering optimization
+- API request optimization
+- UI refinement
+
+### Phase 4: Store Submission Preparation (1 week)
+- Preparation of materials for App Store/Google Play submission
+- Build and submission
+
+### Phase 5: Continuous Development
+- Improvements based on user feedback
+- Implementation of premium features
+
+## 👥 Contributors
+
+- [Your Name](https://github.com/yourusername) - Main Developer
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
