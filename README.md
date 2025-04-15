@@ -75,7 +75,7 @@ A mobile application for efficiently recording and analyzing street game perform
 ## 📂 Project Structure
 
 ```
-rizz-app/
+rizz-v4/
 ├── .expo/               # Expo configuration files
 ├── app/                 # Expo Router (pages)
 │   ├── _layout.tsx      # Layout configuration
@@ -98,42 +98,6 @@ rizz-app/
 └── tsconfig.json        # TypeScript configuration
 ```
 
-## 🗃️ Database Structure
-
-### ER Diagram
-![ER Diagram](https://placeholder-for-er-diagram.com/image.jpg)
-
-### Table Structure
-
-- **users**:
-  - `id`: uuid (PK)
-  - `email`: varchar(255)
-  - `password`: char(32)
-  - `name`: text
-  - `created_at`: timestamp_with_time_zone
-
-- **daily_records**:
-  - `id`: uuid (PK)
-  - `user_id`: uuid (FK → users.id)
-  - `approached`: int
-  - `get_contact`: int
-  - `instant_date`: int
-  - `instant_cv`: int
-  - `game_area`: text
-  - `game_date`: date
-  - `game_time`: timetz
-  - `created_at`: timestamp_with_time_zone
-  - `updated_at`: timestamp_with_time_zone
-
-- **goals**:
-  - `id`: uuid (PK)
-  - `user_id`: uuid (FK → users.id)
-  - `period_type`: text ('daily', 'weekly', 'monthly', 'yearly')
-  - `approached_target`: int
-  - `get_contacts_target`: int
-  - `instant_dates_target`: int
-  - `instant_cv_target`: int
-
 ## 🚀 Development Environment Setup
 
 ### Prerequisites
@@ -146,15 +110,13 @@ rizz-app/
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/rizz-app.git
-cd rizz-app
+git clone https://github.com/yourusername/rizz-v4.git
+cd rizz-v4
 ```
 
 2. **Install dependencies**
 ```bash
 npm install
-# or
-yarn install
 ```
 
 3. **Set up environment variables**
@@ -163,8 +125,6 @@ Copy the `.env.example` file to create `.env` and configure Supabase authenticat
 4. **Start the development server**
 ```bash
 npm start
-# or
-yarn start
 ```
 
 5. **Test with Expo client**
@@ -240,8 +200,4 @@ For detailed API specifications, see the [API Design Document](./docs/api-spec.m
 
 ## 👥 Contributors
 
-- [Your Name](https://github.com/yourusername) - Main Developer
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+- [super-k3n](https://github.com/super-k3n) - Main Developer
