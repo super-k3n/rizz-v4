@@ -1,6 +1,6 @@
 ---
-description: 
-globs: 
+description: Guidelines for working with Supabase in the Rizz application
+globs: */services/*.ts, */hooks/use*Data.ts, */hooks/use*Query.ts
 alwaysApply: false
 ---
 # Supabase Integration Standards for Rizz

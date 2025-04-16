@@ -1,6 +1,6 @@
 ---
-description: 
-globs: 
+description: Rules for frontend code quality, style, and architecture in the Rizz application
+globs: *.tsx, *.ts, *.js, *.jsx
 alwaysApply: false
 ---
 # Frontend Coding Standards for Rizz

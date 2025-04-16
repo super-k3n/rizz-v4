@@ -1,6 +1,6 @@
 ---
-description: 
-globs: 
+description: Guidelines for implementing charts and data visualizations in the Rizz application
+globs: */components/*Chart*.tsx, */components/*Graph*.tsx, */components/data/*.tsx, app/data/*.tsx
 alwaysApply: false
 ---
 # Data Visualization Standards for Rizz

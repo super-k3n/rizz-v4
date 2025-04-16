@@ -1,6 +1,6 @@
 ---
-description: 
-globs: 
+description: Guidelines for implementing navigation in the Rizz application using Expo Router
+globs: app/*.tsx, app/**/*.tsx
 alwaysApply: false
 ---
 # Expo Router & Navigation Standards for Rizz

@@ -1,3 +1,8 @@
+---
+description: Guidelines for implementing forms and validation in the Rizz application
+globs: */components/*Form*.tsx, */components/form/*.tsx, */hooks/use*Form*.tsx
+alwaysApply: false
+---
 # Form Validation Standards for Rizz
 description: Guidelines for implementing forms and validation in the Rizz application
 globs: */components/*Form*.tsx, */components/form/*.tsx, */hooks/use*Form*.tsx
