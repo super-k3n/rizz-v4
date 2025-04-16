@@ -24,7 +24,6 @@ Rizzアプリケーションで使用するSupabaseのデータベースに対�
 ## 参照資料
 - @001_techstack.md
 - @003_api.md
-- @008_nonfunctional.md
 
 ## 完了条件
 - 各テーブルに適切なRLSポリシーが設定されていること
