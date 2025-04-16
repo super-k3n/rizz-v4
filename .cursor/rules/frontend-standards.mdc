@@ -1,0 +1,164 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Frontend Coding Standards for Rizz
+description: Rules for frontend code quality, style, and architecture in the Rizz application
+globs: *.tsx, *.ts, *.js, *.jsx
+
+## Core Principles
+
+- Write clean, predictable, and maintainable TypeScript code
+- Follow consistent naming conventions and code organization
+- Optimize for performance, especially on mobile devices
+- Design with accessibility in mind
+- Implement offline-first approach when possible
+
+## Tech Stack Guidance
+
+- Use Expo and React Native for all UI development
+- TypeScript is mandatory for all new code
+- Use Supabase for backend connectivity, following established API patterns
+- Use Context API with useReducer for state management (avoid Redux)
+- Leverage Expo Router for file-based navigation
+- Use Formik + Yup for form validation
+- Victory Native for data visualization
+
+## Project Structure
+
+- All screens should be in the `app/` directory following Expo Router conventions
+- Reusable components should be in `src/components/`
+- Contextual state should be in `src/contexts/`
+- Custom hooks should be in `src/hooks/`
+- API services should be in `src/services/`
+- TypeScript types should be in `src/types/`
+- Utility functions should be in `src/utils/`
+
+## Code Style & Formatting
+
+- Use functional components exclusively; avoid class components
+- Use explicit return types for functions and hooks
+- Use proper TypeScript interfaces over type aliases when appropriate
+- Destructure props and state variables
+- Limit line length to 100 characters
+- Use 2-space indentation
+- Use single quotes for strings
+- Add semicolons at the end of statements
+- Use PascalCase for component names and interfaces
+- Use camelCase for variables, functions, and instances
+
+## Component Standards
+
+- One component per file, named the same as the file
+- Break down large components into smaller, reusable pieces
+- Component file structure:
+  1. Import statements
+  2. Type definitions
+  3. Component function
+  4. Helper functions
+  5. Styles
+- Use the function keyword for component declarations
+- Include JSDoc comments for complex components
+
+```typescript
+// Example component structure
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+
+/**
+ * Interface for CounterButton props
+ */
+interface CounterButtonProps {
+  type: 'approached' | 'contact' | 'date' | 'close';
+  initialCount?: number;
+  onIncrement: (type: string) => void;
+}
+
+/**
+ * A button that increments a counter value for tracking approaches
+ */
+function CounterButton({ type, initialCount = 0, onIncrement }: CounterButtonProps) {
+  const [count, setCount] = useState(initialCount);
+  
+  // Component logic here
+  
+  return (
+    <View style={styles.container}>
+      {/* JSX markup here */}
+    </View>
+  );
+}
+
+// Helper functions here
+
+const styles = StyleSheet.create({
+  container: {
+    // styles here
+  },
+});
+
+export default CounterButton;
+```
+
+## State Management
+
+- Use local state (useState) for component-specific state
+- Use Context API with useReducer for shared application state
+- Minimize Context API nesting; prefer composition
+- Use custom hooks to abstract complex state logic
+- Always include proper typing for state and actions
+- Use the async/await pattern for asynchronous operations
+
+## Performance Optimization
+
+- Use React.memo for pure components that render often
+- Use useCallback for functions passed as props
+- Use useMemo for expensive calculations
+- Implement proper list virtualization with FlatList or SectionList
+- Optimize image loading with proper dimensions
+- Implement lazy loading when appropriate
+- Test performance on low-end devices
+
+## Offline Support
+
+- Design for offline-first experience when possible
+- Use AsyncStorage for local data persistence
+- Implement proper synchronization strategies
+- Handle network state changes gracefully
+- Use optimistic updates for better UX
+
+## Error Handling
+
+- Implement proper error boundaries
+- Use try/catch blocks for async operations
+- Display user-friendly error messages
+- Log errors appropriately for debugging
+- Gracefully handle network failures
+
+## Testing
+
+- Write unit tests for business logic
+- Write component tests for UI components
+- Use test-driven development when appropriate
+- Mock external dependencies in tests
+- Aim for good test coverage of critical functionality
+
+## Accessibility
+
+- Use proper semantic components
+- Include proper accessibility labels
+- Support screen readers
+- Ensure sufficient color contrast
+- Implement proper focus management
+
+## Documentation
+
+- Include JSDoc comments for complex functions
+- Document props with proper TypeScript interfaces
+- Include code comments for non-obvious logic
+- Keep README and other documentation up-to-date
+
+@file ../tsconfig.json
+@file ../app.json
+@file ../package.json

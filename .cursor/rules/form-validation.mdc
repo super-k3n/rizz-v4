@@ -1,0 +1,558 @@
+# Form Validation Standards for Rizz
+description: Guidelines for implementing forms and validation in the Rizz application
+globs: */components/*Form*.tsx, */components/form/*.tsx, */hooks/use*Form*.tsx
+
+## Form Implementation Principles
+
+- Use Formik for form state management and validation
+- Use Yup for schema-based validation
+- Create consistent, user-friendly error messages
+- Implement proper form accessibility
+- Design intuitive form layouts for mobile
+
+## Form Structure
+
+- Use a consistent structure for all form components
+- Separate form logic from UI components
+- Implement proper field grouping and layout
+- Use appropriate input components for different data types
+
+```typescript
+// Example form structure
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
+import { Formik } from 'formik';
+import * as Yup from 'yup';
+import { TextInput, Button, HelperText } from 'react-native-paper';
+
+// Validation schema
+const validationSchema = Yup.object().shape({
+  email: Yup.string()
+    .email('Invalid email format')
+    .required('Email is required'),
+  password: Yup.string()
+    .min(8, 'Password must be at least 8 characters')
+    .required('Password is required'),
+});
+
+// Initial values
+const initialValues = {
+  email: '',
+  password: '',
+};
+
+function LoginForm({ onSubmit, isLoading }) {
+  return (
+    <Formik
+      initialValues={initialValues}
+      validationSchema={validationSchema}
+      onSubmit={onSubmit}
+    >
+      {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
+        <View style={styles.container}>
+          <TextInput
+            label="Email"
+            value={values.email}
+            onChangeText={handleChange('email')}
+            onBlur={handleBlur('email')}
+            error={touched.email && !!errors.email}
+            style={styles.input}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          {touched.email && errors.email && (
+            <HelperText type="error">{errors.email}</HelperText>
+          )}
+          
+          <TextInput
+            label="Password"
+            value={values.password}
+            onChangeText={handleChange('password')}
+            onBlur={handleBlur('password')}
+            error={touched.password && !!errors.password}
+            secureTextEntry
+            style={styles.input}
+          />
+          {touched.password && errors.password && (
+            <HelperText type="error">{errors.password}</HelperText>
+          )}
+          
+          <Button
+            mode="contained"
+            onPress={handleSubmit}
+            loading={isLoading}
+            disabled={isLoading}
+            style={styles.button}
+          >
+            Login
+          </Button>
+        </View>
+      )}
+    </Formik>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    padding: 16,
+  },
+  input: {
+    marginBottom: 8,
+  },
+  button: {
+    marginTop: 16,
+  },
+});
+
+export default LoginForm;
+```
+
+## Validation Schemas
+
+- Define clear validation schemas using Yup
+- Use consistent validation rules across similar fields
+- Implement proper validation for all form fields
+- Create reusable validation schemas for common patterns
+
+```typescript
+// Example validation schemas
+import * as Yup from 'yup';
+
+// Email validation schema
+export const emailSchema = Yup.string()
+  .email('Invalid email format')
+  .required('Email is required');
+
+// Password validation schema
+export const passwordSchema = Yup.string()
+  .min(8, 'Password must be at least 8 characters')
+  .matches(
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+    'Password must contain at least one uppercase letter, one lowercase letter, and one number'
+  )
+  .required('Password is required');
+
+// Date validation schema
+export const dateSchema = Yup.date()
+  .max(new Date(), 'Date cannot be in the future')
+  .required('Date is required');
+
+// Number validation schema
+export const positiveNumberSchema = Yup.number()
+  .positive('Must be a positive number')
+  .required('Value is required');
+
+// Goal setting form schema
+export const goalFormSchema = Yup.object().shape({
+  period_type: Yup.string()
+    .oneOf(['daily', 'weekly', 'monthly', 'yearly'], 'Invalid period type')
+    .required('Period type is required'),
+  approached_target: Yup.number()
+    .integer('Must be a whole number')
+    .min(1, 'Must be at least 1')
+    .required('Target is required'),
+  get_contacts_target: Yup.number()
+    .integer('Must be a whole number')
+    .min(1, 'Must be at least 1')
+    .required('Target is required'),
+  instant_dates_target: Yup.number()
+    .integer('Must be a whole number')
+    .min(0, 'Cannot be negative')
+    .required('Target is required'),
+  instant_cv_target: Yup.number()
+    .integer('Must be a whole number')
+    .min(0, 'Cannot be negative')
+    .required('Target is required'),
+});
+```
+
+## Error Handling
+
+- Provide clear, user-friendly error messages
+- Show errors at the appropriate time (on blur, on submit, etc.)
+- Implement proper error styling and accessibility
+- Group related errors when appropriate
+
+```typescript
+// Example error display component
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { HelperText } from 'react-native-paper';
+
+interface FormErrorProps {
+  error?: string;
+  visible: boolean;
+}
+
+function FormError({ error, visible }: FormErrorProps) {
+  if (!visible || !error) {
+    return null;
+  }
+  
+  return (
+    <HelperText
+      type="error"
+      style={styles.errorText}
+      accessible={true}
+      accessibilityRole="alert"
+    >
+      {error}
+    </HelperText>
+  );
+}
+
+const styles = StyleSheet.create({
+  errorText: {
+    marginBottom: 8,
+  },
+});
+
+export default FormError;
+```
+
+## Form Submission
+
+- Handle form submission asynchronously
+- Implement proper loading states
+- Handle submission errors gracefully
+- Provide appropriate feedback for successful submission
+
+```typescript
+// Example form submission handling
+import { useState } from 'react';
+import { View } from 'react-native';
+import { Snackbar } from 'react-native-paper';
+import { Formik } from 'formik';
+import ProfileForm from '../components/ProfileForm';
+import { updateProfile } from '../services/userService';
+
+function ProfileScreen() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  
+  const handleSubmit = async (values) => {
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+    
+    try {
+      await updateProfile(values);
+      setSuccess(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  return (
+    <View style={{ flex: 1 }}>
+      <ProfileForm
+        onSubmit={handleSubmit}
+        isLoading={loading}
+      />
+      
+      <Snackbar
+        visible={success}
+        onDismiss={() => setSuccess(false)}
+        duration={3000}
+      >
+        Profile updated successfully
+      </Snackbar>
+      
+      <Snackbar
+        visible={!!error}
+        onDismiss={() => setError(null)}
+        duration={5000}
+        action={{
+          label: 'Dismiss',
+          onPress: () => setError(null),
+        }}
+      >
+        {error}
+      </Snackbar>
+    </View>
+  );
+}
+```
+
+## Form Input Components
+
+- Create reusable form input components
+- Standardize prop interfaces for all input components
+- Implement proper accessibility for all inputs
+- Handle different input types appropriately
+
+```typescript
+// Example reusable form input component
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
+import { TextInput, HelperText } from 'react-native-paper';
+
+interface FormInputProps {
+  label: string;
+  value: string;
+  onChangeText: (text: string) => void;
+  onBlur?: () => void;
+  error?: string;
+  touched?: boolean;
+  placeholder?: string;
+  secureTextEntry?: boolean;
+  keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad';
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  disabled?: boolean;
+}
+
+function FormInput({
+  label,
+  value,
+  onChangeText,
+  onBlur,
+  error,
+  touched,
+  placeholder,
+  secureTextEntry = false,
+  keyboardType = 'default',
+  autoCapitalize = 'none',
+  disabled = false,
+}: FormInputProps) {
+  const showError = touched && !!error;
+  
+  return (
+    <View style={styles.container}>
+      <TextInput
+        label={label}
+        value={value}
+        onChangeText={onChangeText}
+        onBlur={onBlur}
+        error={showError}
+        placeholder={placeholder}
+        secureTextEntry={secureTextEntry}
+        keyboardType={keyboardType}
+        autoCapitalize={autoCapitalize}
+        disabled={disabled}
+        style={styles.input}
+        accessible={true}
+        accessibilityLabel={label}
+        accessibilityHint={placeholder}
+        accessibilityState={{ disabled }}
+      />
+      {showError && (
+        <HelperText
+          type="error"
+          style={styles.errorText}
+          accessible={true}
+          accessibilityRole="alert"
+        >
+          {error}
+        </HelperText>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    marginBottom: 16,
+  },
+  input: {
+    backgroundColor: 'transparent',
+  },
+  errorText: {
+    marginTop: 4,
+  },
+});
+
+export default FormInput;
+```
+
+## Form Hooks
+
+- Create custom hooks for form logic
+- Separate form state management from UI components
+- Implement proper typing for form hooks
+- Handle form submission logic in hooks when appropriate
+
+```typescript
+// Example form hook
+import { useState } from 'react';
+import * as Yup from 'yup';
+import { createGoal, updateGoal } from '../services/goalService';
+import { Goal } from '../types/goals';
+
+// Validation schema
+const goalValidationSchema = Yup.object().shape({
+  period_type: Yup.string()
+    .oneOf(['daily', 'weekly', 'monthly', 'yearly'], 'Invalid period type')
+    .required('Period type is required'),
+  approached_target: Yup.number()
+    .integer('Must be a whole number')
+    .min(1, 'Must be at least 1')
+    .required('Target is required'),
+  get_contacts_target: Yup.number()
+    .integer('Must be a whole number')
+    .min(1, 'Must be at least 1')
+    .required('Target is required'),
+  instant_dates_target: Yup.number()
+    .integer('Must be a whole number')
+    .min(0, 'Cannot be negative')
+    .required('Target is required'),
+  instant_cv_target: Yup.number()
+    .integer('Must be a whole number')
+    .min(0, 'Cannot be negative')
+    .required('Target is required'),
+});
+
+interface UseGoalFormProps {
+  initialGoal?: Goal;
+  onSuccess?: () => void;
+}
+
+function useGoalForm({ initialGoal, onSuccess }: UseGoalFormProps = {}) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const initialValues = initialGoal || {
+    period_type: 'daily',
+    approached_target: 10,
+    get_contacts_target: 3,
+    instant_dates_target: 1,
+    instant_cv_target: 0,
+  };
+  
+  const handleSubmit = async (values: typeof initialValues) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      if (initialGoal?.id) {
+        await updateGoal(initialGoal.id, values);
+      } else {
+        await createGoal(values);
+      }
+      
+      onSuccess?.();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save goal');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  return {
+    validationSchema: goalValidationSchema,
+    initialValues,
+    handleSubmit,
+    loading,
+    error,
+    setError,
+  };
+}
+
+export default useGoalForm;
+```
+
+## Form Layouts
+
+- Design mobile-first form layouts
+- Use consistent spacing and alignment
+- Group related fields together
+- Implement proper keyboard handling
+- Consider form scrolling for longer forms
+
+```typescript
+// Example form layout
+import React from 'react';
+import { ScrollView, View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { Text } from 'react-native-paper';
+
+interface FormLayoutProps {
+  title: string;
+  children: React.ReactNode;
+  footer?: React.ReactNode;
+}
+
+function FormLayout({ title, children, footer }: FormLayoutProps) {
+  return (
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text style={styles.title}>{title}</Text>
+        <View style={styles.formContainer}>
+          {children}
+        </View>
+      </ScrollView>
+      
+      {footer && (
+        <View style={styles.footer}>
+          {footer}
+        </View>
+      )}
+    </KeyboardAvoidingView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 24,
+  },
+  formContainer: {
+    marginBottom: 24,
+  },
+  footer: {
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+    backgroundColor: '#ffffff',
+  },
+});
+
+export default FormLayout;
+```
+
+## Form Accessibility
+
+- Implement proper focus management
+- Use appropriate accessibility attributes
+- Ensure proper keyboard navigation
+- Implement error announcements for screen readers
+
+## Specific Form Types
+
+### Authentication Forms
+- Login form
+- Registration form
+- Password reset form
+
+### Profile Forms
+- User profile form
+- Settings form
+
+### Data Entry Forms
+- Goal setting form
+- Record details form
+
+## Custom Form Controls
+
+- Date pickers
+- Time pickers
+- Numeric inputs
+- Select/dropdown inputs
+- Toggle/switch inputs
+
+@file ../package.json

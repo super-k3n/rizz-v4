@@ -1,0 +1,256 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Expo Router & Navigation Standards for Rizz
+description: Guidelines for implementing navigation in the Rizz application using Expo Router
+globs: app/*.tsx, app/**/*.tsx
+
+## Navigation Architecture
+
+- Use Expo Router for all navigation needs
+- Follow file-based routing conventions
+- Implement proper navigation patterns for mobile UX
+- Use proper TypeScript typing for routes and params
+- Handle deep linking appropriately
+
+## File Structure
+
+- Place all screens in the `app/` directory according to Expo Router conventions
+- Use `_layout.tsx` files for grouping routes that share a layout
+- Use `[param].tsx` for dynamic routes
+- Use `index.tsx` for the default route in a directory
+- Use the `(tabs)` directory pattern for bottom tab navigation
+
+```
+app/
+├── _layout.tsx         # Root layout (shared across all screens)
+├── index.tsx           # Home screen (counters)
+├── (auth)/             # Auth group (non-authenticated routes)
+│   ├── _layout.tsx     # Auth layout
+│   ├── login.tsx       # Login screen
+│   └── register.tsx    # Registration screen
+├── (tabs)/             # Main tab navigator
+│   ├── _layout.tsx     # Tab layout and configuration
+│   ├── index.tsx       # Home tab (alias to root index.tsx)
+│   ├── goal/           # Goal setting tab
+│   │   └── index.tsx   # Goal screen
+│   ├── data/           # Data analysis tab
+│   │   └── index.tsx   # Data screen
+│   └── setting/        # Settings tab
+│       └── index.tsx   # Settings screen
+└── [record]/           # Dynamic record details route
+    └── index.tsx       # Record details screen
+```
+
+## Layout Files
+
+- Use `_layout.tsx` to define shared UI elements and navigation options
+- Implement proper layouts for different navigation patterns (stack, tabs, etc.)
+- Handle authentication state in layouts when appropriate
+- Configure proper styling and transitions
+
+```typescript
+// Example tab layout
+import { Tabs } from 'expo-router';
+import { FontAwesome } from '@expo/vector-icons';
+import { useTheme } from 'react-native-paper';
+
+function TabsLayout() {
+  const theme = useTheme();
+
+  return (
+    <Tabs
+      screenOptions={{
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: theme.colors.outline,
+        tabBarStyle: {
+          backgroundColor: theme.colors.surface,
+          borderTopColor: theme.colors.outline,
+        },
+      }}
+    >
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Home',
+          tabBarIcon: ({ color, size }) => (
+            <FontAwesome name="home" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="goal"
+        options={{
+          title: 'Goals',
+          tabBarIcon: ({ color, size }) => (
+            <FontAwesome name="bullseye" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="data"
+        options={{
+          title: 'Stats',
+          tabBarIcon: ({ color, size }) => (
+            <FontAwesome name="bar-chart" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="setting"
+        options={{
+          title: 'Settings',
+          tabBarIcon: ({ color, size }) => (
+            <FontAwesome name="cog" size={size} color={color} />
+          ),
+        }}
+      />
+    </Tabs>
+  );
+}
+
+export default TabsLayout;
+```
+
+## Route Typing
+
+- Define TypeScript types for route parameters
+- Use type-safe navigation with `useLocalSearchParams`
+- Create route typing utilities if needed
+
+```typescript
+// Example dynamic route with typed params
+import { useLocalSearchParams } from 'expo-router';
+import { View, Text } from 'react-native';
+
+// Route parameter types
+type RecordParams = {
+  id: string;
+  date?: string;
+};
+
+function RecordScreen() {
+  // Type-safe params
+  const params = useLocalSearchParams<RecordParams>();
+  const { id, date } = params;
+
+  return (
+    <View>
+      <Text>Record ID: {id}</Text>
+      {date && <Text>Date: {date}</Text>}
+    </View>
+  );
+}
+
+export default RecordScreen;
+```
+
+## Navigation Actions
+
+- Use the `useRouter` hook for programmatic navigation
+- Handle navigation events properly
+- Implement proper error handling for navigation actions
+
+```typescript
+// Example navigation action
+import { useRouter } from 'expo-router';
+import { Button } from 'react-native-paper';
+
+function NavigationExample() {
+  const router = useRouter();
+
+  const handleNavigate = () => {
+    router.push('/goal');
+  };
+
+  const handleNavigateWithParams = () => {
+    router.push({
+      pathname: '/[record]',
+      params: { id: '123', date: '2023-01-01' }
+    });
+  };
+
+  const handleGoBack = () => {
+    router.back();
+  };
+
+  return (
+    <>
+      <Button onPress={handleNavigate}>Go to Goals</Button>
+      <Button onPress={handleNavigateWithParams}>View Record</Button>
+      <Button onPress={handleGoBack}>Go Back</Button>
+    </>
+  );
+}
+```
+
+## Authentication Flow
+
+- Implement proper authentication checks in layouts or routes
+- Use redirect for unauthenticated users
+- Handle session expiration gracefully
+
+```typescript
+// Example auth check in root layout
+import { Slot, useSegments, useRouter } from 'expo-router';
+import { useEffect } from 'react';
+import { useAuth } from '../src/hooks/useAuth';
+
+function RootLayout() {
+  const { user, isLoading } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    const inAuthGroup = segments[0] === '(auth)';
+
+    if (!user && !inAuthGroup) {
+      // Redirect to login if not authenticated
+      router.replace('/(auth)/login');
+    } else if (user && inAuthGroup) {
+      // Redirect to home if already authenticated
+      router.replace('/');
+    }
+  }, [user, segments, isLoading]);
+
+  return <Slot />;
+}
+
+export default RootLayout;
+```
+
+## Deep Linking
+
+- Configure deep links in `app.json`
+- Handle deep links appropriately in your application
+- Test deep links thoroughly
+
+## Navigation State Persistence
+
+- Implement state persistence when appropriate
+- Handle navigation state restoration after app restart
+- Maintain scroll position when navigating back
+
+## Transitions and Animations
+
+- Use appropriate transitions for different navigation patterns
+- Ensure smooth animations for a polished UX
+- Optimize animation performance on mobile devices
+
+## Error Handling
+
+- Implement proper error boundaries for routes
+- Handle 404 (not found) routes gracefully
+- Provide user-friendly error messages for navigation failures
+
+## Accessibility
+
+- Ensure navigation elements are accessible
+- Use proper semantic elements for navigation
+- Support screen readers for navigation elements
+
+@file ../app.json

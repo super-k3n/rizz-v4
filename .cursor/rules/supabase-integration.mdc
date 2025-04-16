@@ -1,0 +1,282 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Supabase Integration Standards for Rizz
+description: Guidelines for working with Supabase in the Rizz application
+globs: */services/*.ts, */hooks/use*Data.ts, */hooks/use*Query.ts
+
+## Supabase Integration Principles
+
+- Use typed Supabase client for all database interactions
+- Implement proper Row Level Security (RLS) policies
+- Follow established patterns for authentication and data access
+- Ensure proper error handling and offline support
+- Centralize Supabase client initialization
+
+## Authentication Patterns
+
+- Use Supabase Auth for all authentication flows
+- Implement proper token refresh strategies
+- Store authentication state in AuthContext
+- Handle authentication errors gracefully
+- Implement proper logout procedures that clear all local state
+
+```typescript
+// Example authentication service
+import { createClient } from '@supabase/supabase-js';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Database } from '../types/supabase';
+
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
+
+export const supabase = createClient<Database>(
+  supabaseUrl,
+  supabaseAnonKey,
+  {
+    auth: {
+      storage: AsyncStorage,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: false,
+    },
+  }
+);
+
+export async function signIn(email: string, password: string) {
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    
+    if (error) throw error;
+    
+    return { user: data.user, session: data.session, error: null };
+  } catch (error) {
+    return { user: null, session: null, error };
+  }
+}
+```
+
+## Data Access Patterns
+
+- Create service functions for each data entity (daily_records, goals, etc.)
+- Implement proper error handling and return types
+- Use TypeScript interfaces for all data entities
+- Centralize query logic in custom hooks
+
+```typescript
+// Example data service for daily records
+import { supabase } from './supabase';
+import { DailyRecord } from '../types/records';
+
+export async function getDailyRecord(date: string, userId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('daily_records')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('game_date', date)
+      .single();
+      
+    if (error) throw error;
+    
+    return { data: data as DailyRecord, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+}
+
+export async function incrementApproached(date: string, userId: string, count = 1) {
+  try {
+    const { data: existingRecord } = await getDailyRecord(date, userId);
+    
+    if (existingRecord) {
+      // Update existing record
+      const { data, error } = await supabase
+        .from('daily_records')
+        .update({ 
+          approached: existingRecord.approached + count,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingRecord.id)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      return { data: data as DailyRecord, error: null };
+    } else {
+      // Create new record
+      const { data, error } = await supabase
+        .from('daily_records')
+        .insert([{
+          user_id: userId,
+          game_date: date,
+          approached: count,
+          get_contact: 0,
+          instant_date: 0,
+          instant_cv: 0
+        }])
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      return { data: data as DailyRecord, error: null };
+    }
+  } catch (error) {
+    return { data: null, error };
+  }
+}
+```
+
+## Custom Hooks
+
+- Create custom hooks for data access patterns
+- Implement loading and error states
+- Use TypeScript for proper typing
+- Implement proper caching strategies
+- Handle offline mode gracefully
+
+```typescript
+// Example custom hook for daily records
+import { useState, useEffect, useContext } from 'react';
+import { getDailyRecord, incrementApproached } from '../services/recordService';
+import { AuthContext } from '../contexts/AuthContext';
+import { DailyRecord } from '../types/records';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
+
+export function useDailyRecord(date: string) {
+  const [record, setRecord] = useState<DailyRecord | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const { user } = useContext(AuthContext);
+  
+  useEffect(() => {
+    async function fetchRecord() {
+      if (!user) return;
+      
+      setLoading(true);
+      
+      try {
+        // Check for network connectivity
+        const netInfo = await NetInfo.fetch();
+        
+        if (netInfo.isConnected) {
+          // Online: fetch from API
+          const { data, error } = await getDailyRecord(date, user.id);
+          
+          if (error) throw error;
+          
+          setRecord(data);
+          
+          // Cache the result
+          await AsyncStorage.setItem(`record_${date}`, JSON.stringify(data));
+        } else {
+          // Offline: fetch from cache
+          const cachedData = await AsyncStorage.getItem(`record_${date}`);
+          
+          if (cachedData) {
+            setRecord(JSON.parse(cachedData));
+          }
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('Unknown error'));
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchRecord();
+  }, [date, user]);
+  
+  const incrementApproach = async (count = 1) => {
+    if (!user) return;
+    
+    try {
+      // Optimistic update
+      setRecord(prev => prev ? { 
+        ...prev, 
+        approached: prev.approached + count 
+      } : null);
+      
+      // Check for network connectivity
+      const netInfo = await NetInfo.fetch();
+      
+      if (netInfo.isConnected) {
+        // Online: update via API
+        const { data, error } = await incrementApproached(date, user.id, count);
+        
+        if (error) throw error;
+        
+        setRecord(data);
+        
+        // Update cache
+        await AsyncStorage.setItem(`record_${date}`, JSON.stringify(data));
+      } else {
+        // Offline: queue the update
+        const queueKey = 'offlineQueue';
+        const queueString = await AsyncStorage.getItem(queueKey);
+        const queue = queueString ? JSON.parse(queueString) : [];
+        
+        queue.push({
+          type: 'incrementApproached',
+          date,
+          userId: user.id,
+          count,
+          timestamp: Date.now()
+        });
+        
+        await AsyncStorage.setItem(queueKey, JSON.stringify(queue));
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Unknown error'));
+      
+      // Revert optimistic update on error
+      const { data } = await getDailyRecord(date, user.id);
+      setRecord(data);
+    }
+  };
+  
+  return { record, loading, error, incrementApproach };
+}
+```
+
+## Offline Sync Strategy
+
+- Use AsyncStorage for local caching
+- Implement a synchronization queue for offline changes
+- Process the queue when the app comes back online
+- Handle conflict resolution appropriately
+- Provide visual feedback during synchronization
+
+## Database Schema
+
+- Follow the established ER diagram
+- Use UUID for primary keys
+- Include proper timestamps for created_at and updated_at
+- Implement Row Level Security (RLS) policies
+- Use foreign key constraints for data integrity
+
+## Error Handling
+
+- Handle Supabase errors gracefully
+- Provide user-friendly error messages
+- Implement proper retry strategies for network issues
+- Log errors for debugging
+- Categorize errors appropriately (auth, data, network, etc.)
+
+## Performance Considerations
+
+- Optimize queries with proper indexes
+- Minimize the number of API calls
+- Implement proper caching strategies
+- Use optimistic updates for better UX
+- Monitor and optimize query performance
+
+@file ../src/types/supabase.ts

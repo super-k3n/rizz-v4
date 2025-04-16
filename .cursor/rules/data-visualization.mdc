@@ -1,0 +1,419 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Data Visualization Standards for Rizz
+description: Guidelines for implementing charts and data visualizations in the Rizz application
+globs: */components/*Chart*.tsx, */components/*Graph*.tsx, */components/data/*.tsx, app/data/*.tsx
+
+## Data Visualization Principles
+
+- Use Victory Native for all chart and graph components
+- Implement responsive visualizations that adapt to different screen sizes
+- Follow consistent styling and theming across visualizations
+- Ensure visualizations are accessible and provide alternative data views
+- Optimize performance, especially for larger datasets
+
+## Chart Types and Usage
+
+- **Bar Charts**: Use for comparing values across categories (e.g., daily approaches)
+- **Line Charts**: Use for showing trends over time (e.g., weekly/monthly performance)
+- **Pie/Donut Charts**: Use sparingly, only for part-to-whole relationships
+- **Progress Bars**: Use for goal completion visualization
+- **Scatter Plots**: Use for correlation analysis (e.g., success rate by time of day)
+
+## Styling Guidelines
+
+- Use the app's color palette consistently across visualizations
+- Ensure sufficient contrast for readability
+- Use consistent fonts and text sizes
+- Include proper labels, legends, and axes
+- Implement proper spacing and margins
+
+```typescript
+// Example chart theming
+const chartTheme = {
+  axis: {
+    style: {
+      axis: { stroke: '#E5E5E5', strokeWidth: 1 },
+      tickLabels: { fill: '#666666', fontSize: 12 },
+      grid: { stroke: '#E5E5E5', strokeWidth: 1, strokeDasharray: '5,5' },
+    }
+  },
+  bar: {
+    style: {
+      data: { fill: '#2196F3' },
+    }
+  },
+  line: {
+    style: {
+      data: { stroke: '#2196F3', strokeWidth: 2 },
+      labels: { fill: '#666666', fontSize: 12 },
+    }
+  },
+};
+```
+
+## Responsive Design
+
+- Use responsive dimensions that adapt to screen size
+- Implement proper scaling for different device sizes
+- Handle orientation changes gracefully
+- Consider different data granularity for different screen sizes
+
+```typescript
+// Example responsive chart
+import { useWindowDimensions } from 'react-native';
+import { VictoryBar } from 'victory-native';
+
+function ResponsiveBarChart({ data }) {
+  const { width } = useWindowDimensions();
+  
+  // Adjust bar width based on screen width and data points
+  const barWidth = Math.min(30, (width - 60) / data.length);
+  
+  return (
+    <VictoryBar
+      data={data}
+      width={width - 40}
+      height={220}
+      padding={{ top: 20, bottom: 40, left: 50, right: 20 }}
+      style={{
+        data: {
+          width: barWidth,
+          fill: '#2196F3',
+        }
+      }}
+    />
+  );
+}
+```
+
+## Performance Optimization
+
+- Limit the number of data points displayed at once
+- Implement data aggregation for large datasets
+- Use memoization to prevent unnecessary re-renders
+- Optimize animation settings for mobile performance
+
+```typescript
+// Example performance optimization with memoization
+import React, { useMemo } from 'react';
+import { VictoryLine } from 'victory-native';
+
+function OptimizedLineChart({ rawData, dateRange }) {
+  // Memoize data processing to prevent unnecessary recalculations
+  const processedData = useMemo(() => {
+    return rawData
+      .filter(item => {
+        const date = new Date(item.date);
+        return date >= dateRange.start && date <= dateRange.end;
+      })
+      .map(item => ({
+        x: new Date(item.date),
+        y: item.value,
+      }));
+  }, [rawData, dateRange]);
+  
+  return (
+    <VictoryLine
+      data={processedData}
+      // Other props...
+    />
+  );
+}
+
+export default React.memo(OptimizedLineChart);
+```
+
+## Data Formatting
+
+- Format dates consistently across visualizations
+- Format numbers appropriately (decimal places, percentages, etc.)
+- Handle null or missing data appropriately
+- Implement proper data transformations for visualization
+
+```typescript
+// Example data formatting
+function formatDate(dateString, format = 'short') {
+  const date = new Date(dateString);
+  
+  switch (format) {
+    case 'short':
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    case 'medium':
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    case 'long':
+      return date.toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' });
+    default:
+      return date.toLocaleDateString();
+  }
+}
+
+function formatPercentage(value, decimals = 1) {
+  return `${(value * 100).toFixed(decimals)}%`;
+}
+```
+
+## Interactive Elements
+
+- Implement proper tooltips for data points
+- Use touch-friendly interactive elements
+- Provide zoom and pan capabilities when appropriate
+- Implement filters and controls for data exploration
+
+```typescript
+// Example interactive chart with tooltips
+import { useState } from 'react';
+import { View, Text } from 'react-native';
+import { VictoryLine, VictoryTooltip, VictoryVoronoiContainer } from 'victory-native';
+
+function InteractiveLineChart({ data }) {
+  const [activeData, setActiveData] = useState(null);
+  
+  return (
+    <View>
+      {activeData && (
+        <View style={styles.tooltipContainer}>
+          <Text style={styles.tooltipText}>
+            Date: {formatDate(activeData.x)}
+          </Text>
+          <Text style={styles.tooltipText}>
+            Value: {activeData.y}
+          </Text>
+        </View>
+      )}
+      
+      <VictoryLine
+        data={data}
+        containerComponent={
+          <VictoryVoronoiContainer
+            voronoiDimension="x"
+            onActivated={(points) => setActiveData(points[0])}
+            onDeactivated={() => setActiveData(null)}
+          />
+        }
+        // Other props...
+      />
+    </View>
+  );
+}
+```
+
+## Loading and Error States
+
+- Implement proper loading indicators for charts
+- Handle error states gracefully
+- Provide fallback views when data is unavailable
+- Implement retry mechanisms for failed data loading
+
+```typescript
+// Example chart with loading and error states
+function ChartWithStates({ data, isLoading, error, onRetry }) {
+  if (isLoading) {
+    return <ActivityIndicator size="large" color="#2196F3" />;
+  }
+  
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>Failed to load chart data</Text>
+        <Button onPress={onRetry}>Retry</Button>
+      </View>
+    );
+  }
+  
+  if (!data || data.length === 0) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyText}>No data available</Text>
+      </View>
+    );
+  }
+  
+  return (
+    <VictoryChart /* ... */>
+      {/* Chart components */}
+    </VictoryChart>
+  );
+}
+```
+
+## Accessibility
+
+- Include proper accessibility labels for chart elements
+- Provide alternative representations of data (tables, summaries)
+- Ensure sufficient color contrast for all users
+- Support screen readers with meaningful descriptions
+
+```typescript
+// Example accessible chart
+function AccessibleBarChart({ data, title, description }) {
+  return (
+    <View 
+      accessible={true}
+      accessibilityLabel={title}
+      accessibilityHint={description}
+    >
+      <Text style={styles.chartTitle}>{title}</Text>
+      <VictoryBar
+        data={data}
+        // Other props...
+      />
+      
+      {/* Alternative text representation for screen readers */}
+      <View accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants">
+        <Text>Data summary: {generateDataSummary(data)}</Text>
+      </View>
+    </View>
+  );
+}
+
+function generateDataSummary(data) {
+  // Create a text summary of the chart data
+  // e.g., "Highest value: 42 on January 5th. Lowest value: 12 on January 10th."
+  // ...
+}
+```
+
+## Chart Components Structure
+
+- Create reusable chart components in `src/components/data`
+- Implement proper props and TypeScript interfaces
+- Include appropriate documentation
+- Create higher-level components for specific visualization needs
+
+```typescript
+// Example chart component structure
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { VictoryBar, VictoryChart, VictoryAxis, VictoryTheme } from 'victory-native';
+
+interface DailyStatsChartProps {
+  data: Array<{
+    date: string;
+    approached: number;
+    contacted: number;
+  }>;
+  title?: string;
+  height?: number;
+  width?: number;
+}
+
+/**
+ * Daily stats bar chart displaying approached and contacted counts
+ */
+function DailyStatsChart({
+  data,
+  title = 'Daily Performance',
+  height = 300,
+  width = 350,
+}: DailyStatsChartProps) {
+  // Implementation...
+  
+  return (
+    <View style={styles.container}>
+      {title && <Text style={styles.title}>{title}</Text>}
+      <VictoryChart
+        height={height}
+        width={width}
+        theme={VictoryTheme.material}
+        domainPadding={{ x: 20 }}
+      >
+        {/* Chart components */}
+      </VictoryChart>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+});
+
+export default DailyStatsChart;
+```
+
+## Data Preprocessing
+
+- Implement proper data preprocessing before visualization
+- Handle data normalization when appropriate
+- Implement data aggregation for time-series data
+- Manage outliers appropriately
+
+```typescript
+// Example data preprocessing
+function preprocessDataForChart(rawData, period = 'daily') {
+  if (!rawData || rawData.length === 0) {
+    return [];
+  }
+  
+  switch (period) {
+    case 'daily':
+      return rawData.map(item => ({
+        x: new Date(item.game_date),
+        y: item.approached,
+        y2: item.get_contact,
+      }));
+      
+    case 'weekly':
+      // Group data by week and aggregate
+      const weeklyData = {};
+      
+      rawData.forEach(item => {
+        const date = new Date(item.game_date);
+        const weekStart = new Date(date);
+        weekStart.setDate(date.getDate() - date.getDay());
+        const weekKey = weekStart.toISOString().split('T')[0];
+        
+        if (!weeklyData[weekKey]) {
+          weeklyData[weekKey] = {
+            approached: 0,
+            get_contact: 0,
+            count: 0,
+          };
+        }
+        
+        weeklyData[weekKey].approached += item.approached;
+        weeklyData[weekKey].get_contact += item.get_contact;
+        weeklyData[weekKey].count += 1;
+      });
+      
+      return Object.entries(weeklyData).map(([weekKey, data]) => ({
+        x: new Date(weekKey),
+        y: data.approached,
+        y2: data.get_contact,
+      }));
+      
+    // Other period types...
+    
+    default:
+      return rawData;
+  }
+}
+```
+
+## Specific Rizz Chart Requirements
+
+- **Daily Performance Chart**: Bar chart showing approached, contacted, dated, and closed metrics
+- **Success Rate Chart**: Line chart showing contact rate and close rate over time
+- **Goal Progress Chart**: Progress bars or circular progress for goal completion
+- **Performance Comparison Chart**: Compare current period to previous period
+- **Time Analysis Chart**: Show performance by time of day or day of week
+
+## Documentation
+
+- Include proper documentation for all chart components
+- Document the data format required for each chart
+- Include usage examples
+- Document any specific behaviors or limitations
+
+@file ../package.json
