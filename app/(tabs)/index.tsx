@@ -1,11 +1,27 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import { Image, StyleSheet, Platform, Alert } from 'react-native';
+import { Button } from 'react-native-paper';
 
 import { HelloWave } from '@/components/HelloWave';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { useAuth } from '@/contexts/AuthContext';
 
-export default function HomeScreen() {
+// 明示的なデフォルトエクスポート
+function HomeScreen() {
+  const { user, signOut, isLoading } = useAuth();
+
+  // ログアウト処理
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      console.log('ログアウト成功');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'ログアウト中にエラーが発生しました';
+      Alert.alert('エラー', errorMessage);
+    }
+  };
+
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
@@ -16,38 +32,36 @@ export default function HomeScreen() {
         />
       }>
       <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Hello World!!!!</ThemedText>
+        <ThemedText type="title">Rizzへようこそ！</ThemedText>
         <HelloWave />
       </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12'
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
+
+      <ThemedView style={styles.userInfoContainer}>
+        <ThemedText type="subtitle">認証情報</ThemedText>
+        {user ? (
+          <ThemedView>
+            <ThemedText>メールアドレス: {user.email}</ThemedText>
+            <ThemedText>ユーザーID: {user.id}</ThemedText>
+            <ThemedText>名前: {user.user_metadata?.name || 'Not set'}</ThemedText>
+            <Button
+              mode="contained"
+              onPress={handleLogout}
+              loading={isLoading}
+              style={styles.logoutButton}
+            >
+              ログアウト
+            </Button>
+          </ThemedView>
+        ) : (
+          <ThemedText>ログインしていません</ThemedText>
+        )}
       </ThemedView>
+
       <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
+        <ThemedText type="subtitle">アプリについて</ThemedText>
         <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
+          このアプリはRizz（ストリートナンパの実績記録・分析アプリ）です。
+          毎日の活動を記録し、目標に向かって進捗を管理しましょう。
         </ThemedText>
       </ThemedView>
     </ParallaxScrollView>
@@ -60,6 +74,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
+  userInfoContainer: {
+    gap: 8,
+    marginBottom: 16,
+    marginTop: 16,
+    padding: 16,
+    borderRadius: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+  },
   stepContainer: {
     gap: 8,
     marginBottom: 8,
@@ -71,4 +93,10 @@ const styles = StyleSheet.create({
     left: 0,
     position: 'absolute',
   },
+  logoutButton: {
+    marginTop: 16,
+  },
 });
+
+// 明示的にデフォルトエクスポートを定義
+export default HomeScreen;

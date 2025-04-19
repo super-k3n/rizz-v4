@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Link } from 'expo-router';
+import { View, StyleSheet, Alert } from 'react-native';
+import { Link, router } from 'expo-router';
 import { Text } from 'react-native-paper';
 import SignupForm from '../../components/auth/SignupForm';
 import FormLayout from '../../components/auth/FormLayout';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface SignupFormValues {
   email: string;
@@ -11,20 +12,27 @@ interface SignupFormValues {
   password: string;
 }
 
-export default function SignupScreen() {
+// 明示的なデフォルトエクスポート
+function SignupScreen() {
   const [isLoading, setIsLoading] = useState(false);
+  const { signUp } = useAuth();
 
-  // 実際のサインアップ処理は後で実装されますが、今はモックします
-  const handleSignup = (values: SignupFormValues) => {
+  // サインアップ処理
+  const handleSignup = async (values: SignupFormValues) => {
     setIsLoading(true);
 
-    // モックの非同期処理
-    setTimeout(() => {
-      console.log('サインアップ情報:', values);
+    try {
+      await signUp(values.email, values.password, values.name);
+      // 成功した場合、リダイレクト処理はuseRedirectByAuthで自動的に行われます
+      console.log('サインアップ成功');
+    } catch (error) {
+      // エラーをユーザーに表示
+      const errorMessage = error instanceof Error ? error.message : '登録エラーが発生しました';
+      Alert.alert('サインアップエラー', errorMessage);
+      console.error('サインアップエラー:', error);
+    } finally {
       setIsLoading(false);
-
-      // サインアップ成功後、ホーム画面に遷移する処理は後で実装されます
-    }, 1500);
+    }
   };
 
   const footerContent = (
@@ -62,3 +70,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
+
+// 明示的にデフォルトエクスポートを定義
+export default SignupScreen;
