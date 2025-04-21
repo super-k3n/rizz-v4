@@ -2,6 +2,7 @@ import { Image, StyleSheet, Alert, View } from 'react-native';
 import { Button } from 'react-native-paper';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import { router } from 'expo-router';
 
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
@@ -27,6 +28,11 @@ function HomeScreen() {
       const errorMessage = error instanceof Error ? error.message : 'ログアウト中にエラーが発生しました';
       Alert.alert('エラー', errorMessage);
     }
+  };
+
+  // 目標設定画面への遷移
+  const handleGoToGoalSettings = () => {
+    router.push('/goal-settings' as any);
   };
 
   return (
@@ -61,14 +67,25 @@ function HomeScreen() {
 
       {/* 統合カウンターセクション */}
       <ThemedView style={styles.counterSection}>
-        <ThemedText
-          type="subtitle"
-          lightColor="#C09E5C"
-          darkColor="#C09E5C"
-          style={styles.sectionTitle}
-        >
-          本日の記録
-        </ThemedText>
+        <ThemedView style={styles.sectionHeader}>
+          <ThemedText
+            type="subtitle"
+            lightColor="#C09E5C"
+            darkColor="#C09E5C"
+            style={styles.sectionTitle}
+          >
+            本日の記録
+          </ThemedText>
+
+          <Button
+            mode="text"
+            onPress={handleGoToGoalSettings}
+            icon="cog"
+            textColor="#C09E5C"
+          >
+            目標設定
+          </Button>
+        </ThemedView>
 
         {/* 声かけ数 */}
         <ThemedView style={styles.counterRow}>
@@ -232,8 +249,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: 'rgba(54, 69, 79, 0.2)', // チャコールグレー（薄め）
   },
-  sectionTitle: {
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 8,
+  },
+  sectionTitle: {
+    marginBottom: 0, // sectionHeaderで調整するので0に
   },
   counterRow: {
     flexDirection: 'row',

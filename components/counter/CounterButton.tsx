@@ -69,7 +69,7 @@ export function CounterButton({
         {loading ? (
           <ActivityIndicator color="#FFFFFF" size={18} />
         ) : (
-          <MaterialCommunityIcons name={iconName} size={24} color="#FFFFFF" />
+          <MaterialCommunityIcons name={iconName as any} size={24} color="#FFFFFF" />
         )}
       </TouchableOpacity>
     );
@@ -97,7 +97,7 @@ export function CounterButton({
         {loading ? (
           <ActivityIndicator color="#FFFFFF" size={24} />
         ) : (
-          <MaterialCommunityIcons name={iconName} size={32} color="#FFFFFF" />
+          <MaterialCommunityIcons name={iconName as any} size={32} color="#FFFFFF" />
         )}
       </TouchableOpacity>
 
