@@ -3,6 +3,7 @@ import { Button } from 'react-native-paper';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { router } from 'expo-router';
+import { useEffect } from 'react';
 
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
@@ -22,6 +23,12 @@ function HomeScreen() {
   const { incrementCounter, loading: recordLoading, error, isOnline } = useRecord();
   const today = new Date();
   const formattedDate = format(today, 'yyyy年MM月dd日（EEEE）', { locale: ja });
+
+  // 画面が表示されたとき、目標値を読み込む
+  useEffect(() => {
+    // アプリ初期表示時にカウンターと目標値をリセット
+    resetCounterContext();
+  }, []);
 
   // ログアウト処理
   const handleLogout = async () => {
@@ -62,6 +69,18 @@ function HomeScreen() {
     } catch (error) {
       console.error('カウンターリセットエラー:', error);
       Alert.alert('エラー', '予期せぬエラーが発生しました。');
+    }
+  };
+
+  // 目標値を再読み込み
+  const reloadTargets = async () => {
+    try {
+      // CounterContextのリセット関数を呼び出し（これによってSupabaseからも読み込まれる）
+      await resetCounterContext();
+      Alert.alert('成功', 'カウンターと目標値を再読み込みしました');
+    } catch (error) {
+      console.error('目標値の再読み込みエラー:', error);
+      Alert.alert('エラー', '目標値の再読み込み中にエラーが発生しました');
     }
   };
 
@@ -250,6 +269,7 @@ function HomeScreen() {
           <ThemedView>
             <ThemedText>メールアドレス: {user.email}</ThemedText>
             <ThemedText>ユーザーID: {user.id}</ThemedText>
+            <ThemedText>目標値: {targets.approached}</ThemedText>
             <Button
               mode="contained"
               onPress={handleLogout}
@@ -264,6 +284,13 @@ function HomeScreen() {
               style={{marginTop: 8, borderColor: '#5c6bc0'}}
             >
               カウンター再読込
+            </Button>
+            <Button
+              mode="outlined"
+              onPress={reloadTargets}
+              style={{marginTop: 8, borderColor: '#5c6bc0'}}
+            >
+              目標値再読込
             </Button>
             <Button
               mode="outlined"

@@ -104,8 +104,8 @@ export function CounterProvider({ children }: { children: React.ReactNode }) {
     instantCv: false,
   });
 
-  // Supabaseから目標値を読み込む関数
-  const loadTargetsFromSupabase = async () => {
+  // スキーマの変更に合わせてloadTargetsFromSupabase関数を修正
+  const loadTargetsFromSupabase = useCallback(async () => {
     if (!user) return;
     
     try {
@@ -127,6 +127,7 @@ export function CounterProvider({ children }: { children: React.ReactNode }) {
         }
         
         if (data) {
+          console.log(`${period}の目標をロード:`, data);
           newPeriodicTargets[period] = {
             approached: data.approached_target,
             getContact: data.get_contacts_target,
@@ -140,6 +141,7 @@ export function CounterProvider({ children }: { children: React.ReactNode }) {
       if (hasUpdates) {
         // ステートを更新
         setPeriodicTargets(newPeriodicTargets);
+        console.log('目標値をセットしました:', newPeriodicTargets);
         
         // AsyncStorageに保存
         await AsyncStorage.setItem(TARGETS_STORAGE_KEY, JSON.stringify(newPeriodicTargets));
@@ -148,7 +150,7 @@ export function CounterProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       console.error('Supabaseからの目標値読み込みエラー:', err);
     }
-  };
+  }, [user, periodicTargets]);
 
   // 目標値の読み込み
   useEffect(() => {
@@ -180,6 +182,12 @@ export function CounterProvider({ children }: { children: React.ReactNode }) {
     try {
       // AsyncStorageのキャッシュをクリア
       await AsyncStorage.removeItem(COUNTERS_STORAGE_KEY);
+
+      // ユーザーがログインしていればSupabaseから目標値も読み込む
+      if (user) {
+        await loadTargetsFromSupabase();
+        console.log('resetCounters内で目標値を読み込みました');
+      }
 
       // DBからデータを再取得
       const { data: dbRecord, error } = await recordService.getDailyRecord(today);
@@ -246,12 +254,17 @@ export function CounterProvider({ children }: { children: React.ReactNode }) {
         console.error('AsyncStorageからの読み込みエラー:', storageError);
       }
     }
-  }, []);
+  }, [user, loadTargetsFromSupabase]);
 
   // アプリ起動時に明示的に再初期化
   useEffect(() => {
     resetCounters();
-  }, [resetCounters]);
+    
+    // ユーザーがログインしていればSupabaseから目標も読み込む
+    if (user) {
+      loadTargetsFromSupabase();
+    }
+  }, [resetCounters, user]);
 
   // 現在の期間の目標値を取得
   const targets = periodicTargets[currentPeriod];
