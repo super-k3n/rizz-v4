@@ -11,11 +11,15 @@ import { CounterButton } from '@/components/counter/CounterButton';
 import { ProgressDisplay } from '@/components/counter/ProgressDisplay';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCounter } from '@/contexts/CounterContext';
+import { useRecord } from '@/contexts/RecordContext';
+import { debugAuthAndProfile } from '@/services/auth-debug';
+import { resetCounters } from '@/services/reset-counters';
 
 // 明示的なデフォルトエクスポート
 function HomeScreen() {
   const { user, signOut, isLoading: authLoading } = useAuth();
-  const { counters, targets, loading, incrementCounter } = useCounter();
+  const { counters, targets, loading: counterLoading } = useCounter();
+  const { incrementCounter, loading: recordLoading, error, isOnline } = useRecord();
   const today = new Date();
   const formattedDate = format(today, 'yyyy年MM月dd日（EEEE）', { locale: ja });
 
@@ -33,6 +37,29 @@ function HomeScreen() {
   // 目標設定画面への遷移
   const handleGoToGoalSettings = () => {
     router.push('/goal-settings' as any);
+  };
+
+  // カウンターリセット処理
+  const handleResetCounters = async () => {
+    try {
+      const result = await resetCounters();
+      if (result.success && result.data) {
+        // カウンターリセット後に画面を再読み込み
+        Alert.alert('カウンターリセット', 'DBから最新のデータを取得しました。\n\nカウンター値: ' + 
+          `声かけ数: ${result.data.approached}, ` + 
+          `連絡先取得: ${result.data.getContact}, ` + 
+          `即日デート: ${result.data.instantDate}, ` + 
+          `即CV: ${result.data.instantCv}`);
+        
+        // リロードさせるにはアプリを再起動する必要があるかもしれません
+        router.replace('/');
+      } else {
+        Alert.alert('エラー', 'カウンターのリセットに失敗しました。\n' + JSON.stringify(result.error));
+      }
+    } catch (error) {
+      console.error('カウンターリセットエラー:', error);
+      Alert.alert('エラー', '予期せぬエラーが発生しました。');
+    }
   };
 
   return (
@@ -109,8 +136,8 @@ function HomeScreen() {
           <CounterButton
             type="approached"
             count={counters.approached}
-            onIncrement={() => incrementCounter('approached')}
-            loading={loading.approached}
+            onIncrement={() => incrementCounter('approached', new Date().toISOString().split('T')[0])}
+            loading={counterLoading.approached || recordLoading}
             compact={true}
           />
         </ThemedView>
@@ -137,8 +164,8 @@ function HomeScreen() {
           <CounterButton
             type="getContact"
             count={counters.getContact}
-            onIncrement={() => incrementCounter('getContact')}
-            loading={loading.getContact}
+            onIncrement={() => incrementCounter('getContact', new Date().toISOString().split('T')[0])}
+            loading={counterLoading.getContact || recordLoading}
             compact={true}
           />
         </ThemedView>
@@ -165,8 +192,8 @@ function HomeScreen() {
           <CounterButton
             type="instantDate"
             count={counters.instantDate}
-            onIncrement={() => incrementCounter('instantDate')}
-            loading={loading.instantDate}
+            onIncrement={() => incrementCounter('instantDate', new Date().toISOString().split('T')[0])}
+            loading={counterLoading.instantDate || recordLoading}
             compact={true}
           />
         </ThemedView>
@@ -193,12 +220,25 @@ function HomeScreen() {
           <CounterButton
             type="instantCv"
             count={counters.instantCv}
-            onIncrement={() => incrementCounter('instantCv')}
-            loading={loading.instantCv}
+            onIncrement={() => incrementCounter('instantCv', new Date().toISOString().split('T')[0])}
+            loading={counterLoading.instantCv || recordLoading}
             compact={true}
           />
         </ThemedView>
       </ThemedView>
+
+      {/* ネットワーク状態とエラー表示 */}
+      {!isOnline && (
+        <ThemedView style={[styles.statusContainer, styles.offlineContainer]}>
+          <ThemedText style={styles.statusText}>オフラインモード: 変更は後で同期されます</ThemedText>
+        </ThemedView>
+      )}
+
+      {error && (
+        <ThemedView style={[styles.statusContainer, styles.errorContainer]}>
+          <ThemedText style={styles.statusText}>エラー: {error}</ThemedText>
+        </ThemedView>
+      )}
 
       {/* 開発中は認証情報も表示しておく */}
       <ThemedView style={styles.devContainer}>
@@ -214,6 +254,20 @@ function HomeScreen() {
               style={styles.logoutButton}
             >
               ログアウト
+            </Button>
+            <Button
+              mode="outlined"
+              onPress={handleResetCounters}
+              style={{marginTop: 8, borderColor: '#5c6bc0'}}
+            >
+              カウンター再読込
+            </Button>
+            <Button
+              mode="outlined"
+              onPress={debugAuthAndProfile}
+              style={{marginTop: 8, borderColor: '#333'}}
+            >
+              認証診断実行
             </Button>
           </ThemedView>
         ) : (
@@ -287,6 +341,27 @@ const styles = StyleSheet.create({
   logoutButton: {
     marginTop: 16,
     backgroundColor: '#800020', // バーガンディレッド
+  },
+  statusContainer: {
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    marginHorizontal: 16,
+    alignItems: 'center',
+  },
+  offlineContainer: {
+    backgroundColor: 'rgba(255, 204, 0, 0.2)', // 黄色（薄め）
+    borderWidth: 1,
+    borderColor: 'rgba(255, 204, 0, 0.5)',
+  },
+  errorContainer: {
+    backgroundColor: 'rgba(255, 0, 0, 0.1)', // 赤（薄め）
+    borderWidth: 1,
+    borderColor: 'rgba(255, 0, 0, 0.3)',
+  },
+  statusText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
 
