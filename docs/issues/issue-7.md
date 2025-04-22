@@ -12,9 +12,9 @@
   - [ ] RecordContextとRecordProviderの作成
   - [ ] 記録データCRUD操作用のカスタムフック実装
   - [ ] AsyncStorageとの連携
-- [ ] 既存のuseCounterフックとの統合
-  - [ ] useCounterフックの機能をRecordContextに移行
-  - [ ] カウンター操作のAPIをContext経由で提供
+- [x] 既存のuseCounterフックとの統合
+  - [x] useCounterフックの機能をCounterContextに移行
+  - [x] カウンター操作のAPIをContext経由で提供
 
 ### パート2: 目標設定のContext実装
 - [ ] GoalContextの実装
@@ -51,7 +51,8 @@
 - [@006_structure.md](アプリケーション構造定義書)
 
 ## 完了条件
-- [ ] RecordContextが実装され、カウンター操作が正常に動作すること
+- [x] CounterContextが実装され、カウンター操作が正常に動作すること
+- [ ] RecordContextが実装され、記録データの永続化が正常に動作すること
 - [ ] GoalContextが実装され、目標設定が正常に機能すること
 - [ ] ホーム画面のプログレスバーが正しく進捗を表示すること
 - [ ] 期間（日次/週次/月次/年次）の切り替えに応じて、適切なデータが表示されること
@@ -204,3 +205,24 @@ const getStartDateByPeriod = (period: PeriodType, date: Date): string => {
 
 ### 次のイシューへの接続
 このイシュー（#7）が完了すると、Supabase連携（記録）のイシュー#8へ進みます。データモデルと状態管理アーキテクチャが整っていることで、Supabaseとの連携がスムーズに行えるようになります。
+
+## 次にやるべきこと
+1. RecordContextの実装
+   - 記録データの型定義
+   - RecordContextとRecordProviderの作成
+   - 記録データCRUD操作用のカスタムフック実装
+   - AsyncStorageとの連携
+
+2. GoalContextの実装
+   - 目標データの型定義
+   - GoalContextとGoalProviderの作成
+   - 目標CRUD操作用のカスタムフック実装
+   - AsyncStorageとの連携
+
+3. ホーム画面の進捗表示改善
+   - プログレスバーの表示ロジック改善
+   - 実績値表示の改善
+
+4. パフォーマンス最適化
+   - メモ化（useMemo, useCallback）の適用
+   - Context分割の最適化

@@ -12,6 +12,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { useRedirectByAuth } from '@/hooks/useRedirectByAuth';
 import { RecordProvider } from '../contexts/RecordContext';
 import { GoalProvider } from '../contexts/GoalContext';
+import { CounterProvider } from '../contexts/CounterContext';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -66,18 +67,20 @@ function RootLayout() {
     <AuthProvider>
       <RecordProvider>
         <GoalProvider>
-          <PaperProvider theme={theme}>
-            <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-              {/* AuthRedirectコンポーネントを有効化 */}
-              <AuthRedirect />
-              <Stack initialRouteName="(auth)">
-                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen name="+not-found" />
-              </Stack>
-              <StatusBar style="auto" />
-            </ThemeProvider>
-          </PaperProvider>
+          <CounterProvider>
+            <PaperProvider theme={theme}>
+              <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                {/* AuthRedirectコンポーネントを有効化 */}
+                <AuthRedirect />
+                <Stack initialRouteName="(auth)">
+                  <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                  <Stack.Screen name="+not-found" />
+                </Stack>
+                <StatusBar style="auto" />
+              </ThemeProvider>
+            </PaperProvider>
+          </CounterProvider>
         </GoalProvider>
       </RecordProvider>
     </AuthProvider>

@@ -10,7 +10,7 @@ import { ThemedView } from '@/components/ThemedView';
 import { CounterButton } from '@/components/counter/CounterButton';
 import { ProgressDisplay } from '@/components/counter/ProgressDisplay';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCounter } from '@/hooks/useCounter';
+import { useCounter } from '@/contexts/CounterContext';
 
 // 明示的なデフォルトエクスポート
 function HomeScreen() {
