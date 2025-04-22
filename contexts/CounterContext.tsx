@@ -69,6 +69,7 @@ interface CounterContextType {
   incrementCounter: (type: CounterType) => Promise<void>;
   updateTargets: (period: PeriodType, newTargets: Partial<TargetState>) => Promise<{ success: boolean; error: any }>;
   changePeriod: (period: PeriodType) => void;
+  resetCounters: () => Promise<void>;
 }
 
 // コンテキストの作成
@@ -170,6 +171,23 @@ export function CounterProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('カウンターリセットエラー:', error);
+      // エラー時はAsyncStorageから読み込みを試みる
+      try {
+        const storedCounters = await AsyncStorage.getItem(COUNTERS_STORAGE_KEY);
+        if (storedCounters) {
+          const parsedCounters = JSON.parse(storedCounters);
+          if (parsedCounters.date === today) {
+            setCounters({
+              approached: parsedCounters.approached || 0,
+              getContact: parsedCounters.getContact || 0,
+              instantDate: parsedCounters.instantDate || 0,
+              instantCv: parsedCounters.instantCv || 0,
+            });
+          }
+        }
+      } catch (storageError) {
+        console.error('AsyncStorageからの読み込みエラー:', storageError);
+      }
     }
   }, []);
 
@@ -257,6 +275,7 @@ export function CounterProvider({ children }: { children: React.ReactNode }) {
     incrementCounter,
     updateTargets,
     changePeriod,
+    resetCounters,
   };
 
   return (

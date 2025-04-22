@@ -9,6 +9,7 @@ import { DailyRecordData } from '@/services/record';
 // AsyncStorageのキー
 const OFFLINE_QUEUE_KEY = 'rizz_offline_queue';
 const DAILY_RECORDS_CACHE_KEY = 'rizz_daily_records_cache';
+const COUNTERS_STORAGE_KEY = 'rizz_counters_storage';
 
 // 変更キューアイテムの型
 interface ChangeQueueItem {
@@ -267,6 +268,16 @@ export function RecordProvider({ children }: { children: React.ReactNode }) {
 
         await updateCache(date, updatedRecord);
 
+        // AsyncStorageにも保存
+        const today = new Date().toISOString().split('T')[0];
+        await AsyncStorage.setItem(COUNTERS_STORAGE_KEY, JSON.stringify({
+          date: today,
+          approached: updatedRecord.approached || 0,
+          getContact: updatedRecord.get_contact || 0,
+          instantDate: updatedRecord.instant_date || 0,
+          instantCv: updatedRecord.instant_cv || 0,
+        }));
+
         setLoading(false);
         return;
       }
@@ -283,6 +294,16 @@ export function RecordProvider({ children }: { children: React.ReactNode }) {
       if (data) {
         // キャッシュを更新
         await updateCache(date, data);
+
+        // AsyncStorageにも保存
+        const today = new Date().toISOString().split('T')[0];
+        await AsyncStorage.setItem(COUNTERS_STORAGE_KEY, JSON.stringify({
+          date: today,
+          approached: data.approached || 0,
+          getContact: data.get_contact || 0,
+          instantDate: data.instant_date || 0,
+          instantCv: data.instant_cv || 0,
+        }));
       }
     } catch (err: any) {
       console.error('カウンター更新エラー:', err);

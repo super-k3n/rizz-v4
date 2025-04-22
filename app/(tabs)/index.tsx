@@ -18,7 +18,7 @@ import { resetCounters } from '@/services/reset-counters';
 // 明示的なデフォルトエクスポート
 function HomeScreen() {
   const { user, signOut, isLoading: authLoading } = useAuth();
-  const { counters, targets, loading: counterLoading } = useCounter();
+  const { counters, targets, loading: counterLoading, resetCounters: resetCounterContext } = useCounter();
   const { incrementCounter, loading: recordLoading, error, isOnline } = useRecord();
   const today = new Date();
   const formattedDate = format(today, 'yyyy年MM月dd日（EEEE）', { locale: ja });
@@ -45,13 +45,16 @@ function HomeScreen() {
       const result = await resetCounters();
       if (result.success && result.data) {
         // カウンターリセット後に画面を再読み込み
-        Alert.alert('カウンターリセット', 'DBから最新のデータを取得しました。\n\nカウンター値: ' + 
-          `声かけ数: ${result.data.approached}, ` + 
-          `連絡先取得: ${result.data.getContact}, ` + 
-          `即日デート: ${result.data.instantDate}, ` + 
+        Alert.alert('カウンターリセット', 'DBから最新のデータを取得しました。\n\nカウンター値: ' +
+          `声かけ数: ${result.data.approached}, ` +
+          `連絡先取得: ${result.data.getContact}, ` +
+          `即日デート: ${result.data.instantDate}, ` +
           `即CV: ${result.data.instantCv}`);
-        
-        // リロードさせるにはアプリを再起動する必要があるかもしれません
+
+        // CounterContextの状態を直接更新
+        await resetCounterContext();
+
+        // 画面を再読み込み
         router.replace('/');
       } else {
         Alert.alert('エラー', 'カウンターのリセットに失敗しました。\n' + JSON.stringify(result.error));
