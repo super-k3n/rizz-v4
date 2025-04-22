@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CounterType } from '@/components/counter/CounterButton';
+import * as recordService from '@/services/record';
 
 export type PeriodType = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
@@ -28,6 +29,7 @@ interface PeriodicTargetsState {
 
 // AsyncStorageのキー
 const TARGETS_STORAGE_KEY = 'rizz_targets';
+const COUNTERS_STORAGE_KEY = 'rizz_counters';
 
 // デフォルトの目標値
 const defaultTargets: PeriodicTargetsState = {
@@ -67,6 +69,7 @@ interface CounterContextType {
   incrementCounter: (type: CounterType) => Promise<void>;
   updateTargets: (period: PeriodType, newTargets: Partial<TargetState>) => Promise<{ success: boolean; error: any }>;
   changePeriod: (period: PeriodType) => void;
+  resetCounters: () => Promise<void>;
 }
 
 // コンテキストの作成
@@ -96,7 +99,7 @@ export function CounterProvider({ children }: { children: React.ReactNode }) {
     instantCv: false,
   });
 
-  // AsyncStorageから目標値を読み込む
+  // 目標値の読み込み
   useEffect(() => {
     const loadTargets = async () => {
       try {
@@ -112,6 +115,87 @@ export function CounterProvider({ children }: { children: React.ReactNode }) {
     loadTargets();
   }, []);
 
+  // カウンターの初期化処理
+  const resetCounters = useCallback(async () => {
+    // 現在の日付を取得
+    const today = new Date().toISOString().split('T')[0];
+
+    try {
+      // AsyncStorageのキャッシュをクリア
+      await AsyncStorage.removeItem(COUNTERS_STORAGE_KEY);
+
+      // DBからデータを再取得
+      const { data: dbRecord, error } = await recordService.getDailyRecord(today);
+
+      console.log('カウンターリセット時のデータ取得結果:', {
+        dbRecord,
+        error
+      });
+
+      if (dbRecord) {
+        // DBから取得した値を設定
+        const newCounters = {
+          approached: dbRecord.approached || 0,
+          getContact: dbRecord.get_contact || 0,
+          instantDate: dbRecord.instant_date || 0,
+          instantCv: dbRecord.instant_cv || 0,
+        };
+
+        // Contextの状態を更新
+        setCounters(newCounters);
+
+        // AsyncStorageに新しい値を保存
+        await AsyncStorage.setItem(COUNTERS_STORAGE_KEY, JSON.stringify({
+          date: today,
+          ...newCounters
+        }));
+
+        console.log('カウンターリセット完了:', newCounters);
+      } else {
+        // データがない場合はゼロで初期化
+        const zeroCounters = {
+          approached: 0,
+          getContact: 0,
+          instantDate: 0,
+          instantCv: 0
+        };
+
+        setCounters(zeroCounters);
+
+        await AsyncStorage.setItem(COUNTERS_STORAGE_KEY, JSON.stringify({
+          date: today,
+          ...zeroCounters
+        }));
+
+        console.log('データなし、カウンターをゼロにリセット');
+      }
+    } catch (error) {
+      console.error('カウンターリセットエラー:', error);
+      // エラー時はAsyncStorageから読み込みを試みる
+      try {
+        const storedCounters = await AsyncStorage.getItem(COUNTERS_STORAGE_KEY);
+        if (storedCounters) {
+          const parsedCounters = JSON.parse(storedCounters);
+          if (parsedCounters.date === today) {
+            setCounters({
+              approached: parsedCounters.approached || 0,
+              getContact: parsedCounters.getContact || 0,
+              instantDate: parsedCounters.instantDate || 0,
+              instantCv: parsedCounters.instantCv || 0,
+            });
+          }
+        }
+      } catch (storageError) {
+        console.error('AsyncStorageからの読み込みエラー:', storageError);
+      }
+    }
+  }, []);
+
+  // アプリ起動時に明示的に再初期化
+  useEffect(() => {
+    resetCounters();
+  }, [resetCounters]);
+
   // 現在の期間の目標値を取得
   const targets = periodicTargets[currentPeriod];
 
@@ -121,16 +205,20 @@ export function CounterProvider({ children }: { children: React.ReactNode }) {
     setLoading(prev => ({ ...prev, [type]: true }));
 
     try {
-      // 実際のアプリではここでSupabase APIを呼び出す
-      // とりあえずローカルステートを更新
-
-      // 0.5秒の遅延を入れて非同期操作をシミュレート
-      await new Promise(resolve => setTimeout(resolve, 500));
-
       // カウンター値を更新
-      setCounters(prev => ({
-        ...prev,
-        [type]: prev[type] + 1,
+      const newCounters = {
+        ...counters,
+        [type]: counters[type] + 1,
+      };
+
+      // ステートを更新
+      setCounters(newCounters);
+
+      // AsyncStorageに保存
+      const today = new Date().toISOString().split('T')[0];
+      await AsyncStorage.setItem(COUNTERS_STORAGE_KEY, JSON.stringify({
+        date: today,
+        ...newCounters
       }));
     } catch (error) {
       console.error('カウンター更新エラー:', error);
@@ -139,7 +227,7 @@ export function CounterProvider({ children }: { children: React.ReactNode }) {
       // ローディング状態を終了
       setLoading(prev => ({ ...prev, [type]: false }));
     }
-  }, []);
+  }, [counters]);
 
   // 目標値を更新する関数
   const updateTargets = useCallback(async (period: PeriodType, newTargets: Partial<TargetState>) => {
@@ -187,6 +275,7 @@ export function CounterProvider({ children }: { children: React.ReactNode }) {
     incrementCounter,
     updateTargets,
     changePeriod,
+    resetCounters,
   };
 
   return (

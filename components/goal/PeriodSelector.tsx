@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { SegmentedButtons } from 'react-native-paper';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { PeriodType } from '@/hooks/useCounter';
+import { PeriodType } from '@/contexts/CounterContext';
 
 interface PeriodSelectorProps {
   value: PeriodType;
