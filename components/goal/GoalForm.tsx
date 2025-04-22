@@ -5,8 +5,16 @@ import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { PeriodSelector } from '@/components/goal/PeriodSelector';
 import { NumericInput } from '@/components/goal/NumericInput';
-import { GoalValues } from '@/app/goal-settings';
-import { PeriodType } from '@/hooks/useCounter';
+import { PeriodType } from '@/contexts/CounterContext';
+
+// GoalValuesの型定義
+export type GoalValues = {
+  period: PeriodType;
+  approached: number;
+  getContact: number;
+  instantDate: number;
+  instantCv: number;
+};
 
 interface GoalFormProps {
   initialValues: GoalValues;

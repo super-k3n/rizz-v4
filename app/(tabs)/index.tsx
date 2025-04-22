@@ -10,7 +10,7 @@ import { ThemedView } from '@/components/ThemedView';
 import { CounterButton } from '@/components/counter/CounterButton';
 import { ProgressDisplay } from '@/components/counter/ProgressDisplay';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCounter } from '@/hooks/useCounter';
+import { useCounter } from '@/contexts/CounterContext';
 
 // 明示的なデフォルトエクスポート
 function HomeScreen() {
@@ -45,9 +45,7 @@ function HomeScreen() {
             style={styles.headerTitle}
             lightColor="#C09E5C"
             darkColor="#C09E5C"
-          >
-            Rizz
-          </ThemedText>
+          >Rizz</ThemedText>
           <ThemedText
             style={styles.headerDate}
             lightColor="#FFFFFF"
@@ -63,7 +61,9 @@ function HomeScreen() {
             {user?.user_metadata?.name ? `${user.user_metadata.name}さん` : 'ゲストさん'}
           </ThemedText>
         </ThemedView>
-      }>
+      }
+
+      >
 
       {/* 統合カウンターセクション */}
       <ThemedView style={styles.counterSection}>
@@ -92,10 +92,10 @@ function HomeScreen() {
           <ThemedView style={styles.counterInfo}>
             <ThemedText
               style={styles.counterLabel}
-              lightColor="#FFFFFF"
+              lightColor="#0A0F23"
               darkColor="#FFFFFF"
             >
-              声かけ数 / {targets.approached}
+              声かけ数: {counters.approached} / {targets.approached}
             </ThemedText>
             <View style={styles.progressContainer}>
               <ProgressDisplay
@@ -120,10 +120,10 @@ function HomeScreen() {
           <ThemedView style={styles.counterInfo}>
             <ThemedText
               style={styles.counterLabel}
-              lightColor="#FFFFFF"
+              lightColor="#0A0F23"
               darkColor="#FFFFFF"
             >
-              連絡先確保数 / {targets.getContact}
+              バンゲ数: {counters.getContact} / {targets.getContact}
             </ThemedText>
             <View style={styles.progressContainer}>
               <ProgressDisplay
@@ -148,10 +148,10 @@ function HomeScreen() {
           <ThemedView style={styles.counterInfo}>
             <ThemedText
               style={styles.counterLabel}
-              lightColor="#FFFFFF"
+              lightColor="#0A0F23"
               darkColor="#FFFFFF"
             >
-              連れ出し数 / {targets.instantDate}
+              連れ出し数: {counters.instantDate} / {targets.instantDate}
             </ThemedText>
             <View style={styles.progressContainer}>
               <ProgressDisplay
@@ -176,10 +176,10 @@ function HomeScreen() {
           <ThemedView style={styles.counterInfo}>
             <ThemedText
               style={styles.counterLabel}
-              lightColor="#FFFFFF"
+              lightColor="#0A0F23"
               darkColor="#FFFFFF"
             >
-              sex数 / {targets.instantCv}
+              即数: {counters.instantCv} / {targets.instantCv}
             </ThemedText>
             <View style={styles.progressContainer}>
               <ProgressDisplay
@@ -226,12 +226,11 @@ function HomeScreen() {
 
 const styles = StyleSheet.create({
   headerContent: {
-    flex: 1,
-    justifyContent: 'flex-end',
+    marginTop: 32,
     padding: 16,
   },
   headerTitle: {
-    fontSize: 42,
+    fontSize: 32,
     marginBottom: 8,
   },
   headerDate: {

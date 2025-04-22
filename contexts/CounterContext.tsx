@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CounterType } from '@/components/counter/CounterButton';
 
@@ -33,31 +33,47 @@ const TARGETS_STORAGE_KEY = 'rizz_targets';
 const defaultTargets: PeriodicTargetsState = {
   daily: {
     approached: 10,
-    getContact: 5,
-    instantDate: 2,
+    getContact: 2,
+    instantDate: 1,
     instantCv: 1,
   },
   weekly: {
-    approached: 70,
-    getContact: 35,
-    instantDate: 14,
-    instantCv: 7,
+    approached: 50,
+    getContact: 10,
+    instantDate: 3,
+    instantCv: 1,
   },
   monthly: {
-    approached: 300,
-    getContact: 150,
-    instantDate: 60,
-    instantCv: 30,
+    approached: 100,
+    getContact: 12,
+    instantDate: 4,
+    instantCv: 2,
   },
   yearly: {
-    approached: 3650,
-    getContact: 1825,
-    instantDate: 730,
-    instantCv: 365,
+    approached: 365,
+    getContact: 100,
+    instantDate: 30,
+    instantCv: 12,
   },
 };
 
-export function useCounter() {
+// コンテキストの型定義
+interface CounterContextType {
+  counters: CounterState;
+  targets: TargetState;
+  loading: Record<CounterType, boolean>;
+  currentPeriod: PeriodType;
+  periodicTargets: PeriodicTargetsState;
+  incrementCounter: (type: CounterType) => Promise<void>;
+  updateTargets: (period: PeriodType, newTargets: Partial<TargetState>) => Promise<{ success: boolean; error: any }>;
+  changePeriod: (period: PeriodType) => void;
+}
+
+// コンテキストの作成
+const CounterContext = createContext<CounterContextType | undefined>(undefined);
+
+// プロバイダーコンポーネント
+export function CounterProvider({ children }: { children: React.ReactNode }) {
   // 現在の期間（デフォルトは日次）
   const [currentPeriod, setCurrentPeriod] = useState<PeriodType>('daily');
 
@@ -161,7 +177,8 @@ export function useCounter() {
     setCurrentPeriod(period);
   }, []);
 
-  return {
+  // コンテキストの値
+  const value = {
     counters,
     targets,
     loading,
@@ -171,4 +188,19 @@ export function useCounter() {
     updateTargets,
     changePeriod,
   };
+
+  return (
+    <CounterContext.Provider value={value}>
+      {children}
+    </CounterContext.Provider>
+  );
+}
+
+// カスタムフック
+export function useCounter() {
+  const context = useContext(CounterContext);
+  if (context === undefined) {
+    throw new Error('useCounter must be used within a CounterProvider');
+  }
+  return context;
 }
