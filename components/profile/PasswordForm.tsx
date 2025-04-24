@@ -56,9 +56,9 @@ export const PasswordForm: React.FC = () => {
       <ThemedText type="subtitle" style={styles.title}>
         パスワード変更
       </ThemedText>
-      
+
       <Formik
-        initialValues={{ 
+        initialValues={{
           currentPassword: '',
           newPassword: '',
           confirmPassword: ''
@@ -78,8 +78,8 @@ export const PasswordForm: React.FC = () => {
               secureTextEntry={!showCurrentPassword}
               error={touched.currentPassword && Boolean(errors.currentPassword)}
               right={
-                <TextInput.Icon 
-                  icon={showCurrentPassword ? "eye-off" : "eye"} 
+                <TextInput.Icon
+                  icon={showCurrentPassword ? "eye-off" : "eye"}
                   onPress={() => setShowCurrentPassword(!showCurrentPassword)}
                 />
               }
@@ -87,7 +87,7 @@ export const PasswordForm: React.FC = () => {
             {touched.currentPassword && errors.currentPassword && (
               <ThemedText style={styles.errorText}>{errors.currentPassword}</ThemedText>
             )}
-            
+
             <TextInput
               label="新しいパスワード"
               value={values.newPassword}
@@ -98,8 +98,8 @@ export const PasswordForm: React.FC = () => {
               secureTextEntry={!showNewPassword}
               error={touched.newPassword && Boolean(errors.newPassword)}
               right={
-                <TextInput.Icon 
-                  icon={showNewPassword ? "eye-off" : "eye"} 
+                <TextInput.Icon
+                  icon={showNewPassword ? "eye-off" : "eye"}
                   onPress={() => setShowNewPassword(!showNewPassword)}
                 />
               }
@@ -107,7 +107,7 @@ export const PasswordForm: React.FC = () => {
             {touched.newPassword && errors.newPassword && (
               <ThemedText style={styles.errorText}>{errors.newPassword}</ThemedText>
             )}
-            
+
             <TextInput
               label="新しいパスワード（確認）"
               value={values.confirmPassword}
@@ -118,8 +118,8 @@ export const PasswordForm: React.FC = () => {
               secureTextEntry={!showConfirmPassword}
               error={touched.confirmPassword && Boolean(errors.confirmPassword)}
               right={
-                <TextInput.Icon 
-                  icon={showConfirmPassword ? "eye-off" : "eye"} 
+                <TextInput.Icon
+                  icon={showConfirmPassword ? "eye-off" : "eye"}
                   onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                 />
               }
@@ -127,9 +127,11 @@ export const PasswordForm: React.FC = () => {
             {touched.confirmPassword && errors.confirmPassword && (
               <ThemedText style={styles.errorText}>{errors.confirmPassword}</ThemedText>
             )}
-            
-            <Button 
+
+            <Button
               mode="contained"
+              buttonColor="#800020"
+              textColor='#FFF'
               onPress={() => handleSubmit()}
               loading={loading}
               disabled={loading}
@@ -140,7 +142,7 @@ export const PasswordForm: React.FC = () => {
           </View>
         )}
       </Formik>
-      
+
       <Snackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}

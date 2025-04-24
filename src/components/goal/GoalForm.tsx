@@ -145,6 +145,8 @@ const GoalForm: React.FC<GoalFormProps> = ({ initialPeriod = 'daily' }) => {
 
       <Button
         mode="contained"
+        buttonColor="#800020"
+        textColor='#FFF'
         onPress={handleSubmit}
         loading={loading || ctxLoading.approached}
         disabled={loading || ctxLoading.approached}

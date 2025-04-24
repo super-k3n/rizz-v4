@@ -34,7 +34,7 @@ export const UsernameForm: React.FC = () => {
       <ThemedText type="subtitle" style={styles.title}>
         ユーザー名設定
       </ThemedText>
-      
+
       <Formik
         initialValues={{ name: profile?.name || '' }}
         validationSchema={UsernameSchema}
@@ -55,9 +55,11 @@ export const UsernameForm: React.FC = () => {
             {touched.name && errors.name && (
               <ThemedText style={styles.errorText}>{errors.name}</ThemedText>
             )}
-            
-            <Button 
+
+            <Button
               mode="contained"
+              buttonColor="#800020"
+              textColor='#FFF'
               onPress={() => handleSubmit()}
               loading={loading}
               disabled={loading}
@@ -68,7 +70,7 @@ export const UsernameForm: React.FC = () => {
           </View>
         )}
       </Formik>
-      
+
       <Snackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}

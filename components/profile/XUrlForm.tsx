@@ -29,9 +29,9 @@ const XUrlSchema = Yup.object().shape({
         if (!value) return true; // 空の場合は検証をスキップ
         try {
           const url = new URL(value);
-          return url.hostname === 'twitter.com' || 
-                 url.hostname === 'www.twitter.com' || 
-                 url.hostname === 'x.com' || 
+          return url.hostname === 'twitter.com' ||
+                 url.hostname === 'www.twitter.com' ||
+                 url.hostname === 'x.com' ||
                  url.hostname === 'www.x.com';
         } catch (e) {
           return false;
@@ -67,7 +67,7 @@ export const XUrlForm: React.FC = () => {
       <ThemedText type="subtitle" style={styles.title}>
         X(Twitter)設定
       </ThemedText>
-      
+
       <Formik
         initialValues={{ x_url: profile?.x_url || '' }}
         validationSchema={XUrlSchema}
@@ -95,13 +95,15 @@ export const XUrlForm: React.FC = () => {
                 />
               )}
             </View>
-            
+
             {touched.x_url && errors.x_url && (
               <ThemedText style={styles.errorText}>{errors.x_url}</ThemedText>
             )}
-            
-            <Button 
+
+            <Button
               mode="contained"
+              buttonColor="#800020"
+              textColor='#FFF'
               onPress={() => handleSubmit()}
               loading={loading}
               disabled={loading}
@@ -112,7 +114,7 @@ export const XUrlForm: React.FC = () => {
           </View>
         )}
       </Formik>
-      
+
       <Snackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}

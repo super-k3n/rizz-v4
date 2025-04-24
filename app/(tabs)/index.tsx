@@ -317,6 +317,8 @@ function HomeScreen() {
             <ThemedText>目標値: {targets.approached}</ThemedText>
             <Button
               mode="contained"
+              buttonColor="#800020"
+              textColor='#FFF'
               onPress={handleLogout}
               loading={authLoading}
               style={styles.logoutButton}

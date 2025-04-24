@@ -19,12 +19,12 @@ export const ThemeToggle: React.FC = () => {
     // 実際の画面の状態とスイッチの状態を同期させる
     const actualTheme = colorScheme || 'dark';
     setIsDarkMode(actualTheme === 'dark');
-    
+
     // またプロフィールの設定が実際のテーマと異なる場合、プロフィールを更新
     if (profile && profile.theme_preference !== actualTheme) {
-      console.log('テーマ設定の不一致を修正します:', { 
-        profileTheme: profile.theme_preference, 
-        actualTheme 
+      console.log('テーマ設定の不一致を修正します:', {
+        profileTheme: profile.theme_preference,
+        actualTheme
       });
       updateTheme(actualTheme).catch(err => {
         console.error('テーマ設定の同期エラー:', err);
@@ -56,18 +56,18 @@ export const ThemeToggle: React.FC = () => {
       // 現在の状態の反対を取得
       const newTheme = colorScheme === 'dark' ? 'light' : 'dark';
       console.log('テーマを切り替えています:', { 現在: colorScheme, 新規: newTheme });
-      
+
       // まずUIを即座に更新
       setIsDarkMode(newTheme === 'dark');
       setColorScheme(newTheme); // アプリ全体のテーマを変更
-      
+
       // 次にプロフィールの設定を更新
       await updateTheme(newTheme);
-      
+
       // テーマ変更を記録するメッセージを設定
       setSnackbarMessage(`テーマを${newTheme === 'dark' ? 'ダーク' : 'ライト'}モードに変更しました`);
       setSnackbarVisible(true);
-      
+
       // 変更が反映されるように、短い遅延後にリロード
       setTimeout(async () => {
         await reloadApp();
