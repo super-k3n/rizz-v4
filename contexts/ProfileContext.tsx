@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Profile, ProfileUpdateData } from '../types/profile';
+import { Profile, ProfileUpdateData } from '../src/types/profile';
 import * as profileService from '../services/profile';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from './AuthContext';
 
 interface ProfileContextType {
   profile: Profile | null;

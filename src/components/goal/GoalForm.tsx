@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
 import { Button, Text, TextInput, SegmentedButtons, HelperText } from 'react-native-paper';
 import { PeriodType } from '../../types/goal';
-import { useGoal } from '../../contexts/GoalContext';
+import { useGoal } from '@/contexts/GoalContext';
 
 interface GoalFormProps {
   initialPeriod?: PeriodType;

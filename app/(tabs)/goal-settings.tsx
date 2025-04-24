@@ -4,7 +4,7 @@ import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { Button } from 'react-native-paper';
 import GoalForm from '../../src/components/goal/GoalForm';
-import { useGoal } from '../../src/contexts/GoalContext';
+import { useGoal } from '@/contexts/GoalContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { ActivityIndicator } from 'react-native-paper';
 import { debugGoals, insertTestGoal } from '../../src/services/goal';

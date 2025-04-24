@@ -1,5 +1,5 @@
-import { supabase } from '../../lib/supabase';
-import { Profile, ProfileUpdateData } from '../types/profile';
+import { supabase } from '../lib/supabase';
+import { Profile, ProfileUpdateData } from '../src/types/profile';
 
 // プロフィール情報を取得
 export const getProfile = async (): Promise<Profile | null> => {
@@ -85,15 +85,6 @@ export const changePassword = async (currentPassword: string, newPassword: strin
     
     if (!user || !user.user) {
       throw new Error('ユーザーが認証されていません');
-    }
-    
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: user.user.email!,
-      password: currentPassword,
-    });
-    
-    if (signInError) {
-      throw new Error('現在のパスワードが正しくありません');
     }
     
     // パスワードを変更
