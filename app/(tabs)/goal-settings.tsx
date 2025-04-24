@@ -7,7 +7,7 @@ import GoalForm from '../../src/components/goal/GoalForm';
 import { useGoal } from '../../src/contexts/GoalContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { ActivityIndicator } from 'react-native-paper';
-import { debugGoals, checkSchema, insertTestGoal } from '../../src/services/goal';
+import { debugGoals, insertTestGoal } from '../../src/services/goal';
 
 export default function GoalSettingsScreen() {
   const { loading, syncGoals, error } = useGoal();
@@ -40,16 +40,6 @@ export default function GoalSettingsScreen() {
     }
   };
 
-  // デバッグ機能: スキーマ確認
-  const checkDbSchema = async () => {
-    try {
-      const result = await checkSchema();
-      Alert.alert('スキーマ確認結果', JSON.stringify(result, null, 2).substring(0, 1000));
-    } catch (err) {
-      Alert.alert('スキーマ確認エラー', JSON.stringify(err, null, 2));
-    }
-  };
-
   // デバッグ機能: テストデータ挿入
   const insertTest = async () => {
     if (!user) {
@@ -71,7 +61,7 @@ export default function GoalSettingsScreen() {
       Alert.alert('エラー', 'ユーザーはログインしていません');
       return;
     }
-    
+
     Alert.alert('ユーザー情報', JSON.stringify({
       id: user.id,
       email: user.email,
@@ -81,8 +71,8 @@ export default function GoalSettingsScreen() {
   };
 
   return (
-    <ScrollView 
-      style={styles.scrollView} 
+    <ScrollView
+      style={styles.scrollView}
       contentContainerStyle={styles.scrollContent}
       refreshControl={
         <RefreshControl refreshing={loading} onRefresh={onRefresh} />
@@ -105,32 +95,24 @@ export default function GoalSettingsScreen() {
         {/* デバッグセクション */}
         <View style={styles.debugContainer}>
           <ThemedText style={styles.debugTitle}>デバッグメニュー</ThemedText>
-          
-          <Button 
+
+          <Button
             mode="outlined"
             onPress={runDebug}
             style={styles.debugButton}
           >
             Supabaseデータ確認
           </Button>
-          
-          <Button 
-            mode="outlined"
-            onPress={checkDbSchema}
-            style={styles.debugButton}
-          >
-            スキーマ確認
-          </Button>
-          
-          <Button 
+
+          <Button
             mode="outlined"
             onPress={insertTest}
             style={styles.debugButton}
           >
             テストデータ挿入
           </Button>
-          
-          <Button 
+
+          <Button
             mode="outlined"
             onPress={checkUser}
             style={styles.debugButton}
