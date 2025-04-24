@@ -1,7 +1,9 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CounterType } from '@/components/counter/CounterButton';
+import { useAuth } from '@/contexts/AuthContext';
 import * as recordService from '@/services/record';
+import * as goalService from '../src/services/goal';
 
 export type PeriodType = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
@@ -77,6 +79,9 @@ const CounterContext = createContext<CounterContextType | undefined>(undefined);
 
 // プロバイダーコンポーネント
 export function CounterProvider({ children }: { children: React.ReactNode }) {
+  // 認証情報
+  const { user } = useAuth();
+  
   // 現在の期間（デフォルトは日次）
   const [currentPeriod, setCurrentPeriod] = useState<PeriodType>('daily');
 
@@ -99,13 +104,67 @@ export function CounterProvider({ children }: { children: React.ReactNode }) {
     instantCv: false,
   });
 
+  // スキーマの変更に合わせてloadTargetsFromSupabase関数を修正
+  const loadTargetsFromSupabase = useCallback(async () => {
+    if (!user) return;
+    
+    try {
+      // 全期間の目標を取得
+      const periods: PeriodType[] = ['daily', 'weekly', 'monthly', 'yearly'];
+      const newPeriodicTargets = { ...periodicTargets };
+      let hasUpdates = false;
+      
+      for (const period of periods) {
+        const { data, error } = await goalService.getGoal(user.id, period);
+        
+        if (error) {
+          if (error.code === 'PGRST116') {
+            // データが存在しない場合は無視
+            console.log(`${period}の目標がまだ設定されていません`);
+            continue;
+          }
+          throw error;
+        }
+        
+        if (data) {
+          console.log(`${period}の目標をロード:`, data);
+          newPeriodicTargets[period] = {
+            approached: data.approached_target,
+            getContact: data.get_contacts_target,
+            instantDate: data.instant_dates_target,
+            instantCv: data.instant_cv_target,
+          };
+          hasUpdates = true;
+        }
+      }
+      
+      if (hasUpdates) {
+        // ステートを更新
+        setPeriodicTargets(newPeriodicTargets);
+        console.log('目標値をセットしました:', newPeriodicTargets);
+        
+        // AsyncStorageに保存
+        await AsyncStorage.setItem(TARGETS_STORAGE_KEY, JSON.stringify(newPeriodicTargets));
+        console.log('Supabaseから目標値を読み込みました');
+      }
+    } catch (err) {
+      console.error('Supabaseからの目標値読み込みエラー:', err);
+    }
+  }, [user, periodicTargets]);
+
   // 目標値の読み込み
   useEffect(() => {
     const loadTargets = async () => {
       try {
+        // まずローカルストレージから読み込み
         const storedTargets = await AsyncStorage.getItem(TARGETS_STORAGE_KEY);
         if (storedTargets) {
           setPeriodicTargets(JSON.parse(storedTargets));
+        }
+        
+        // ユーザーがログインしていればSupabaseからも読み込み
+        if (user) {
+          await loadTargetsFromSupabase();
         }
       } catch (error) {
         console.error('目標値の読み込みエラー:', error);
@@ -113,7 +172,7 @@ export function CounterProvider({ children }: { children: React.ReactNode }) {
     };
 
     loadTargets();
-  }, []);
+  }, [user]);
 
   // カウンターの初期化処理
   const resetCounters = useCallback(async () => {
@@ -123,6 +182,12 @@ export function CounterProvider({ children }: { children: React.ReactNode }) {
     try {
       // AsyncStorageのキャッシュをクリア
       await AsyncStorage.removeItem(COUNTERS_STORAGE_KEY);
+
+      // ユーザーがログインしていればSupabaseから目標値も読み込む
+      if (user) {
+        await loadTargetsFromSupabase();
+        console.log('resetCounters内で目標値を読み込みました');
+      }
 
       // DBからデータを再取得
       const { data: dbRecord, error } = await recordService.getDailyRecord(today);
@@ -189,12 +254,17 @@ export function CounterProvider({ children }: { children: React.ReactNode }) {
         console.error('AsyncStorageからの読み込みエラー:', storageError);
       }
     }
-  }, []);
+  }, [user, loadTargetsFromSupabase]);
 
   // アプリ起動時に明示的に再初期化
   useEffect(() => {
     resetCounters();
-  }, [resetCounters]);
+    
+    // ユーザーがログインしていればSupabaseから目標も読み込む
+    if (user) {
+      loadTargetsFromSupabase();
+    }
+  }, [resetCounters, user]);
 
   // 現在の期間の目標値を取得
   const targets = periodicTargets[currentPeriod];
@@ -232,11 +302,8 @@ export function CounterProvider({ children }: { children: React.ReactNode }) {
   // 目標値を更新する関数
   const updateTargets = useCallback(async (period: PeriodType, newTargets: Partial<TargetState>) => {
     try {
-      // 実際のアプリではここでSupabase APIを呼び出す
-      // とりあえずローカルステートを更新
-
-      // 0.5秒の遅延を入れて非同期操作をシミュレート
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Supabaseのusersテーブルの情報を確認
+      console.log('更新前のユーザー確認:', user);
 
       // 期間ごとの目標値を更新
       const updatedPeriodicTargets = {
@@ -252,13 +319,40 @@ export function CounterProvider({ children }: { children: React.ReactNode }) {
 
       // AsyncStorageに保存
       await AsyncStorage.setItem(TARGETS_STORAGE_KEY, JSON.stringify(updatedPeriodicTargets));
+      
+      // ユーザーがログインしていればSupabaseにも保存
+      if (user) {
+        console.log('目標値をSupabaseに保存開始:', period, updatedPeriodicTargets[period]);
+        
+        const goalData = {
+          user_id: user.id,
+          period_type: period,
+          approached_target: updatedPeriodicTargets[period].approached,
+          get_contacts_target: updatedPeriodicTargets[period].getContact,
+          instant_dates_target: updatedPeriodicTargets[period].instantDate,
+          instant_cv_target: updatedPeriodicTargets[period].instantCv
+        };
+        
+        console.log('送信するgolデータ:', goalData);
+        
+        const { data, error } = await goalService.upsertGoal(goalData);
+        
+        console.log('目標値保存結果:', { data, error });
+        
+        if (error) {
+          console.error('Supabaseへの目標値保存エラー:', error);
+          return { success: false, error };
+        }
+        
+        console.log('Supabaseに目標値を保存しました:', period);
+      }
 
       return { success: true, error: null };
     } catch (error) {
       console.error('目標値更新エラー:', error);
       return { success: false, error };
     }
-  }, [periodicTargets]);
+  }, [periodicTargets, user]);
 
   // 期間を切り替える関数
   const changePeriod = useCallback((period: PeriodType) => {

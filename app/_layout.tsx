@@ -10,7 +10,7 @@ import { Provider as PaperProvider, MD3LightTheme as PaperDefaultTheme, MD3DarkT
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { RecordProvider } from '@/contexts/RecordContext';
-import { GoalProvider } from '@/contexts/GoalContext';
+import { GoalProvider } from '../src/contexts/GoalContext';
 import { CounterProvider } from '@/contexts/CounterContext';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.

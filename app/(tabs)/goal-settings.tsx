@@ -1,61 +1,93 @@
-import { StyleSheet, Alert, ScrollView } from 'react-native';
+import React, { useEffect } from 'react';
+import { StyleSheet, Alert, ScrollView, RefreshControl, View } from 'react-native';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
-import { GoalForm, GoalValues } from '@/components/goal/GoalForm';
-import { useCounter } from '@/contexts/CounterContext';
-import { router } from 'expo-router';
-import { useState } from 'react';
+import { Button } from 'react-native-paper';
+import GoalForm from '../../src/components/goal/GoalForm';
+import { useGoal } from '../../src/contexts/GoalContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { ActivityIndicator } from 'react-native-paper';
+import { debugGoals, checkSchema, insertTestGoal } from '../../src/services/goal';
 
 export default function GoalSettingsScreen() {
-  const { targets, periodicTargets, currentPeriod, updateTargets, changePeriod } = useCounter();
-  const [loading, setLoading] = useState(false);
+  const { loading, syncGoals, error } = useGoal();
+  const { user } = useAuth();
 
-  // 初期値を設定
-  const initialValues = {
-    period: currentPeriod,
-    approached: targets.approached,
-    getContact: targets.getContact,
-    instantDate: targets.instantDate,
-    instantCv: targets.instantCv,
-  };
+  // 画面が表示されたときにデータを同期
+  useEffect(() => {
+    syncGoals();
+  }, []);
 
-  // 目標設定の保存処理
-  const handleSubmit = async (values: any) => {
-    setLoading(true);
+  // エラー発生時にアラートを表示
+  useEffect(() => {
+    if (error) {
+      Alert.alert('エラー', error.message);
+    }
+  }, [error]);
+
+  // プルダウンリフレッシュの処理
+  const onRefresh = React.useCallback(() => {
+    syncGoals();
+  }, [syncGoals]);
+
+  // デバッグ機能: Supabaseデータ確認
+  const runDebug = async () => {
     try {
-      const result = await updateTargets(values.period, {
-        approached: values.approached,
-        getContact: values.getContact,
-        instantDate: values.instantDate,
-        instantCv: values.instantCv,
-      });
-
-      if (result.success) {
-        Alert.alert('成功', '目標設定を保存しました');
-        router.back();
-      } else {
-        Alert.alert('エラー', '目標設定の保存に失敗しました');
-      }
-    } catch (error) {
-      console.error('目標設定エラー:', error);
-      Alert.alert('エラー', '目標設定の保存中にエラーが発生しました');
-    } finally {
-      setLoading(false);
+      const result = await debugGoals();
+      Alert.alert('Supabaseデータ確認結果', JSON.stringify(result, null, 2).substring(0, 1000));
+    } catch (err) {
+      Alert.alert('デバッグエラー', JSON.stringify(err, null, 2));
     }
   };
 
-  // キャンセル処理
-  const handleCancel = () => {
-    router.back();
+  // デバッグ機能: スキーマ確認
+  const checkDbSchema = async () => {
+    try {
+      const result = await checkSchema();
+      Alert.alert('スキーマ確認結果', JSON.stringify(result, null, 2).substring(0, 1000));
+    } catch (err) {
+      Alert.alert('スキーマ確認エラー', JSON.stringify(err, null, 2));
+    }
   };
 
-  // 期間変更処理
-  const handlePeriodChange = (period: string) => {
-    changePeriod(period as any);
+  // デバッグ機能: テストデータ挿入
+  const insertTest = async () => {
+    if (!user) {
+      Alert.alert('エラー', 'ログインしていません');
+      return;
+    }
+
+    try {
+      const result = await insertTestGoal(user.id);
+      Alert.alert('テストデータ挿入結果', JSON.stringify(result, null, 2));
+    } catch (err) {
+      Alert.alert('テストデータ挿入エラー', JSON.stringify(err, null, 2));
+    }
+  };
+
+  // デバッグ機能: Supabaseユーザー確認
+  const checkUser = () => {
+    if (!user) {
+      Alert.alert('エラー', 'ユーザーはログインしていません');
+      return;
+    }
+    
+    Alert.alert('ユーザー情報', JSON.stringify({
+      id: user.id,
+      email: user.email,
+      metadata: user.user_metadata,
+      created_at: user.created_at
+    }, null, 2));
   };
 
   return (
-    <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+    <ScrollView 
+      style={styles.scrollView} 
+      contentContainerStyle={styles.scrollContent}
+      refreshControl={
+        <RefreshControl refreshing={loading} onRefresh={onRefresh} />
+      }
+    >
       <ThemedView style={styles.container}>
         <ThemedText type="title" style={styles.title}>
           目標設定
@@ -64,13 +96,48 @@ export default function GoalSettingsScreen() {
           日、週、月、年ごとの目標を設定できます。
         </ThemedText>
 
-        <GoalForm
-          initialValues={initialValues}
-          onSubmit={handleSubmit}
-          onCancel={handleCancel}
-          onPeriodChange={handlePeriodChange}
-          loading={loading}
-        />
+        {loading ? (
+          <ActivityIndicator size="large" style={styles.loader} />
+        ) : (
+          <GoalForm initialPeriod="daily" />
+        )}
+
+        {/* デバッグセクション */}
+        <View style={styles.debugContainer}>
+          <ThemedText style={styles.debugTitle}>デバッグメニュー</ThemedText>
+          
+          <Button 
+            mode="outlined"
+            onPress={runDebug}
+            style={styles.debugButton}
+          >
+            Supabaseデータ確認
+          </Button>
+          
+          <Button 
+            mode="outlined"
+            onPress={checkDbSchema}
+            style={styles.debugButton}
+          >
+            スキーマ確認
+          </Button>
+          
+          <Button 
+            mode="outlined"
+            onPress={insertTest}
+            style={styles.debugButton}
+          >
+            テストデータ挿入
+          </Button>
+          
+          <Button 
+            mode="outlined"
+            onPress={checkUser}
+            style={styles.debugButton}
+          >
+            ユーザー情報確認
+          </Button>
+        </View>
       </ThemedView>
     </ScrollView>
   );
@@ -94,5 +161,22 @@ const styles = StyleSheet.create({
   description: {
     fontSize: 16,
     marginBottom: 24,
+  },
+  loader: {
+    marginTop: 40,
+  },
+  debugContainer: {
+    marginTop: 32,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#ddd',
+  },
+  debugTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  debugButton: {
+    marginBottom: 8,
   },
 });
