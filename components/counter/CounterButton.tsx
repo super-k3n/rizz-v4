@@ -22,22 +22,22 @@ export interface CounterButtonProps {
 const counterConfig = {
   approached: {
     label: '声かけ数',
-    icon: 'microphone',
+    icon: 'plus',
     color: '#800020', // バーガンディレッド
   },
   getContact: {
     label: '連絡先ゲット数',
-    icon: 'contacts',
+    icon: 'plus',
     color: '#800020', // バーガンディレッド
   },
   instantDate: {
     label: '即日デート数',
-    icon: 'calendar-clock',
+    icon: 'plus',
     color: '#800020', // バーガンディレッド
   },
   instantCv: {
     label: '即(sex)数',
-    icon: 'heart',
+    icon: 'plus',
     color: '#800020', // バーガンディレッド
   },
 };

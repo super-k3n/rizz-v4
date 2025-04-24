@@ -56,7 +56,7 @@ export function ProgressDisplay({
 
       <View style={styles.progressBarContainer}>
         <LinearGradient
-          colors={['#0A0F23', '#1A2342', '#D4AF37']}
+          colors={['#806920', '#A88B2B', '#D4AF37']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={[

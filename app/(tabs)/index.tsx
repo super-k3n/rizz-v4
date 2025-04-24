@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { router } from 'expo-router';
 import { useEffect } from 'react';
+import type { CounterType } from '@/lib/types/record';
 
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
@@ -160,7 +161,14 @@ function HomeScreen() {
               lightColor="#0A0F23"
               darkColor="#FFFFFF"
             >
-              声かけ数: {counters.approached} / {targets.approached}
+              声かけ数: {counters.approached} / {targets.approached}{' '}
+              <ThemedText
+                style={[styles.counterLabel, styles.progressText]}
+                lightColor="#D4AF37"
+                darkColor="#D4AF37"
+              >
+                ({Math.round((counters.approached / (targets.approached || 1)) * 100)}%)
+              </ThemedText>
             </ThemedText>
             <View style={styles.progressContainer}>
               <ProgressDisplay
@@ -188,7 +196,14 @@ function HomeScreen() {
               lightColor="#0A0F23"
               darkColor="#FFFFFF"
             >
-              バンゲ数: {counters.getContact} / {targets.getContact}
+              バンゲ数: {counters.getContact} / {targets.getContact}{' '}
+              <ThemedText
+                style={[styles.counterLabel, styles.progressText]}
+                lightColor="#D4AF37"
+                darkColor="#D4AF37"
+              >
+                ({Math.round((counters.getContact / (targets.getContact || 1)) * 100)}%)
+              </ThemedText>
             </ThemedText>
             <View style={styles.progressContainer}>
               <ProgressDisplay
@@ -216,7 +231,14 @@ function HomeScreen() {
               lightColor="#0A0F23"
               darkColor="#FFFFFF"
             >
-              連れ出し数: {counters.instantDate} / {targets.instantDate}
+              連れ出し数: {counters.instantDate} / {targets.instantDate}{' '}
+              <ThemedText
+                style={[styles.counterLabel, styles.progressText]}
+                lightColor="#D4AF37"
+                darkColor="#D4AF37"
+              >
+                ({Math.round((counters.instantDate / (targets.instantDate || 1)) * 100)}%)
+              </ThemedText>
             </ThemedText>
             <View style={styles.progressContainer}>
               <ProgressDisplay
@@ -244,7 +266,14 @@ function HomeScreen() {
               lightColor="#0A0F23"
               darkColor="#FFFFFF"
             >
-              即数: {counters.instantCv} / {targets.instantCv}
+              即数: {counters.instantCv} / {targets.instantCv}{' '}
+              <ThemedText
+                style={[styles.counterLabel, styles.progressText]}
+                lightColor="#D4AF37"
+                darkColor="#D4AF37"
+              >
+                ({Math.round((counters.instantCv / (targets.instantCv || 1)) * 100)}%)
+              </ThemedText>
             </ThemedText>
             <View style={styles.progressContainer}>
               <ProgressDisplay
@@ -375,7 +404,6 @@ const styles = StyleSheet.create({
     marginTop: 16,
     padding: 16,
     borderRadius: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
     borderWidth: 1,
     borderColor: 'rgba(0, 0, 0, 0.1)',
     borderStyle: 'dashed',
@@ -404,6 +432,9 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 14,
     fontWeight: '500',
+  },
+  progressText: {
+    fontWeight: 'bold',
   },
 });
 
