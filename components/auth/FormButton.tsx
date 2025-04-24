@@ -27,6 +27,8 @@ function FormButton({
       disabled={loading || disabled}
       style={[styles.button, style]}
       labelStyle={styles.buttonLabel}
+      buttonColor="#800020"
+      textColor="#FFF"
       accessible={true}
       accessibilityLabel={title}
       accessibilityState={{ disabled: loading || disabled }}

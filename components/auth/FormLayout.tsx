@@ -51,7 +51,7 @@ function FormLayout({ title, subtitle, children, footer }: FormLayoutProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#0a0e1c',
   },
   keyboardAvoidingView: {
     flex: 1,
@@ -67,10 +67,12 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 8,
+    color: '#FFFFFF',
   },
   subtitle: {
     fontSize: 16,
     opacity: 0.7,
+    color: '#FFFFFF',
   },
   formContainer: {
     flex: 1,
@@ -78,8 +80,8 @@ const styles = StyleSheet.create({
   footer: {
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-    backgroundColor: '#ffffff',
+    borderTopColor: '#1a1e2c',
+    backgroundColor: '#0a0e1c',
   },
 });
 
