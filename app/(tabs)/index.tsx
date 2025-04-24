@@ -13,22 +13,40 @@ import { ProgressDisplay } from '@/components/counter/ProgressDisplay';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCounter } from '@/contexts/CounterContext';
 import { useRecord } from '@/contexts/RecordContext';
+import { useProfile } from '@/contexts/ProfileContext';
 import { debugAuthAndProfile } from '@/services/auth-debug';
 import { resetCounters } from '@/services/reset-counters';
 
 // 明示的なデフォルトエクスポート
 function HomeScreen() {
   const { user, signOut, isLoading: authLoading } = useAuth();
+  const { profile } = useProfile();
   const { counters, targets, loading: counterLoading, resetCounters: resetCounterContext } = useCounter();
   const { incrementCounter, loading: recordLoading, error, isOnline } = useRecord();
   const today = new Date();
   const formattedDate = format(today, 'yyyy年MM月dd日（EEEE）', { locale: ja });
 
-  // 画面が表示されたとき、目標値を読み込む
+  // 画面が表示されたとき、カウンターと目標値をリセット
   useEffect(() => {
-    // アプリ初期表示時にカウンターと目標値をリセット
+    // 現在の日付を取得
+    const today = new Date().toISOString().split('T')[0];
+    console.log(`ホーム画面表示 - 現在の日付: ${today}`);
+
+    // カウンターと目標値をリセット
     resetCounterContext();
   }, []);
+
+  // 現在の日付を取得する関数
+  const getCurrentDate = () => {
+    return new Date().toISOString().split('T')[0];
+  };
+
+  // カウンターボタンのクリックハンドラ
+  const handleCounterIncrement = (type: CounterType) => {
+    const today = getCurrentDate();
+    console.log(`カウンタークリック - タイプ: ${type}, 日付: ${today}`);
+    incrementCounter(type, today);
+  };
 
   // ログアウト処理
   const handleLogout = async () => {
@@ -107,7 +125,7 @@ function HomeScreen() {
             lightColor="#0A0F23"
             darkColor="#FFFFFF"
           >
-            {user?.user_metadata?.name ? `${user.user_metadata.name}さん` : 'ゲストさん'}
+            {profile?.name ? `${profile.name}さん` : 'ゲストさん'}
           </ThemedText>
         </ThemedView>
       }
@@ -156,7 +174,7 @@ function HomeScreen() {
           <CounterButton
             type="approached"
             count={counters.approached}
-            onIncrement={() => incrementCounter('approached', new Date().toISOString().split('T')[0])}
+            onIncrement={() => handleCounterIncrement('approached')}
             loading={counterLoading.approached || recordLoading}
             compact={true}
           />
@@ -184,7 +202,7 @@ function HomeScreen() {
           <CounterButton
             type="getContact"
             count={counters.getContact}
-            onIncrement={() => incrementCounter('getContact', new Date().toISOString().split('T')[0])}
+            onIncrement={() => handleCounterIncrement('getContact')}
             loading={counterLoading.getContact || recordLoading}
             compact={true}
           />
@@ -212,7 +230,7 @@ function HomeScreen() {
           <CounterButton
             type="instantDate"
             count={counters.instantDate}
-            onIncrement={() => incrementCounter('instantDate', new Date().toISOString().split('T')[0])}
+            onIncrement={() => handleCounterIncrement('instantDate')}
             loading={counterLoading.instantDate || recordLoading}
             compact={true}
           />
@@ -240,7 +258,7 @@ function HomeScreen() {
           <CounterButton
             type="instantCv"
             count={counters.instantCv}
-            onIncrement={() => incrementCounter('instantCv', new Date().toISOString().split('T')[0])}
+            onIncrement={() => handleCounterIncrement('instantCv')}
             loading={counterLoading.instantCv || recordLoading}
             compact={true}
           />

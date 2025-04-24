@@ -218,10 +218,24 @@ export function CounterProvider({ children }: { children: React.ReactNode }) {
   const resetCounters = useCallback(async () => {
     // 現在の日付を取得
     const today = new Date().toISOString().split('T')[0];
+    console.log(`CounterContext.resetCounters - 現在の日付: ${today}`);
 
     try {
+      // 前回のカウンター状態を取得
+      const storedCountersStr = await AsyncStorage.getItem(COUNTERS_STORAGE_KEY);
+      const storedCounters = storedCountersStr ? JSON.parse(storedCountersStr) : null;
+      
+      console.log(`CounterContext.resetCounters - 前回のカウンター:`, storedCounters);
+      
+      // 日付が変わったかチェック
+      const dateChanged = !storedCounters || storedCounters.date !== today;
+      console.log(`CounterContext.resetCounters - 日付変更確認: ${dateChanged}`);
+
       // AsyncStorageのキャッシュをクリア
-      await AsyncStorage.removeItem(COUNTERS_STORAGE_KEY);
+      if (dateChanged) {
+        await AsyncStorage.removeItem(COUNTERS_STORAGE_KEY);
+        console.log(`CounterContext.resetCounters - 日付が変わったためキャッシュをクリア`);
+      }
 
       // ユーザーがログインしていればSupabaseから目標値も読み込む
       if (user) {
@@ -234,9 +248,15 @@ export function CounterProvider({ children }: { children: React.ReactNode }) {
 
       console.log('カウンターリセット時のデータ取得結果:', {
         dbRecord,
-        error
+        error,
+        dateChanged
       });
-
+      
+      // デバッグ用に日付の状態を詳しく出力
+      if (storedCounters && dateChanged) {
+        console.log(`日付変更検出: 前回=${storedCounters.date}, 今回=${today}`);
+      }
+      
       if (dbRecord) {
         // DBから取得した値を設定
         const newCounters = {
@@ -245,6 +265,8 @@ export function CounterProvider({ children }: { children: React.ReactNode }) {
           instantDate: dbRecord.instant_date || 0,
           instantCv: dbRecord.instant_cv || 0,
         };
+        
+        console.log(`既存レコードからカウンター値を設定:`, newCounters);
 
         // Contextの状態を更新
         setCounters(newCounters);
@@ -264,6 +286,8 @@ export function CounterProvider({ children }: { children: React.ReactNode }) {
           instantDate: 0,
           instantCv: 0
         };
+        
+        console.log(`${today}のレコードが存在しないため、ゼロで初期化します`);
 
         setCounters(zeroCounters);
 

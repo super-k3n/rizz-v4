@@ -227,6 +227,7 @@ export function RecordProvider({ children }: { children: React.ReactNode }) {
     date: string = new Date().toISOString().split('T')[0],
     count: number = 1
   ) => {
+    console.log(`RecordContext.incrementCounter - タイプ: ${type}, 日付: ${date}, 値: ${count}`);
     setLoading(true);
     setError(null);
 
@@ -236,6 +237,7 @@ export function RecordProvider({ children }: { children: React.ReactNode }) {
 
       // オフラインの場合はキューに追加
       if (!isOnline) {
+        console.log(`RecordContext.incrementCounter - オフラインモードで実行`);
         await addToChangeQueue({
           action: 'increment',
           type,
@@ -283,6 +285,7 @@ export function RecordProvider({ children }: { children: React.ReactNode }) {
       }
 
       // オンラインの場合はSupabaseに直接更新
+      console.log(`RecordContext.incrementCounter - オンラインモードで実行: ${date}`); 
       const { data, error } = await recordService.incrementCounter(type, date, count);
 
       if (error) {

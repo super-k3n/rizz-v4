@@ -134,6 +134,7 @@ export const getDailyRecord = async (date: string): Promise<Response<DailyRecord
  * @returns 成功またはエラー
  */
 export const upsertDailyRecord = async (recordData: Partial<DailyRecordData>): Promise<Response<DailyRecordData>> => {
+  console.log('upsertDailyRecord - 開始', recordData);
   try {
     // ユーザーIDを取得
     const { data: { user } } = await supabase.auth.getUser();
@@ -168,30 +169,75 @@ export const upsertDailyRecord = async (recordData: Partial<DailyRecordData>): P
 
     // game_dateがない場合は現在の日付を使用
     const gameDate = recordData.game_date || new Date().toISOString().split('T')[0];
+    console.log(`upsertDailyRecord - 日付設定: ${gameDate}`);
     
     // 既存の記録を確認
     const { data: existingRecord } = await getDailyRecord(gameDate);
+    console.log(`upsertDailyRecord - 既存記録: ${existingRecord ? 'あり' : 'なし'}`, existingRecord);
     
-    // データを準備
-    const dataToUpsert = {
-      ...existingRecord,
-      ...recordData,
-      user_id: profileData.id, // プロファイルのIDを使用
-      game_date: gameDate,
-      updated_at: new Date().toISOString(),
-    };
+    // デバッグ用に日付と既存記録情報を表示
+    console.log(`incrementCounter - 日付: ${gameDate}, 既存記録:`, existingRecord);
     
-    // 新規作成の場合はcreated_atを設定
-    if (!existingRecord) {
-      dataToUpsert.created_at = new Date().toISOString();
+    // 必要なデータを準備
+    let dataToUpsert: Partial<DailyRecordData> = {};
+    
+    if (existingRecord && existingRecord.game_date === gameDate) {
+      console.log(`upsertDailyRecord - 同じ日付の既存記録を更新します`);
+      // 既存記録をベースに更新
+      dataToUpsert = {
+        ...existingRecord,
+        ...recordData,
+        user_id: profileData.id,
+        game_date: gameDate,
+        updated_at: new Date().toISOString(),
+      };
+    } else {
+      console.log(`upsertDailyRecord - 新しい日付の記録を作成します`);
+      // 新規レコードを作成
+      dataToUpsert = {
+        id: undefined, // 新規レコードとして扱うためにidをクリア
+        user_id: profileData.id,
+        game_date: gameDate,
+        approached: recordData.approached ?? 0,
+        get_contact: recordData.get_contact ?? 0,
+        instant_date: recordData.instant_date ?? 0,
+        instant_cv: recordData.instant_cv ?? 0,
+        game_area: recordData.game_area,
+        game_time: recordData.game_time,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
     }
+    
+    console.log(`upsertDailyRecord - 更新データ:`, dataToUpsert);
 
     // 日次記録を作成または更新
-    const { data, error } = await supabase
-      .from('daily_records')
-      .upsert(dataToUpsert)
-      .select()
-      .single();
+    let data, error;
+    
+    if (existingRecord && existingRecord.game_date === gameDate) {
+      // 同じ日付の既存記録なら更新
+      console.log(`upsertDailyRecord - レコードを更新します ID: ${existingRecord.id}`);
+      const result = await supabase
+        .from('daily_records')
+        .update(dataToUpsert)
+        .eq('id', existingRecord.id)
+        .select()
+        .single();
+      
+      data = result.data;
+      error = result.error;
+    } else {
+      // 新しい日付なら新規作成
+      console.log(`upsertDailyRecord - 新規レコードを作成します`);
+      const result = await supabase
+        .from('daily_records')
+        .insert(dataToUpsert)
+        .select()
+        .single();
+      
+      data = result.data;
+      error = result.error;
+    }
 
     if (error) throw error;
 
@@ -270,8 +316,9 @@ export const incrementCounter = async (
     const column = columnMap[type];
     
     // 新しい値を計算
-    const currentValue = existingRecord ? existingRecord[column] : 0;
+    const currentValue = existingRecord ? (existingRecord[column] || 0) : 0;
     const newValue = currentValue + count;
+    console.log(`incrementCounter - カラム: ${column}, 現在値: ${currentValue}, 新値: ${newValue}`);
     
     // 更新データを準備
     const updateData: Partial<DailyRecordData> = {
@@ -279,6 +326,8 @@ export const incrementCounter = async (
       game_date: gameDate,
       [column]: newValue,
     };
+    
+    console.log('incrementCounter - 更新データ:', updateData);
     
     // 記録が存在しない場合は他のカウンターを0で初期化
     if (!existingRecord) {
