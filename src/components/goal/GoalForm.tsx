@@ -68,7 +68,6 @@ const GoalForm: React.FC<GoalFormProps> = ({ initialPeriod = 'daily' }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>目標設定</Text>
 
       <SegmentedButtons
         value={selectedPeriod}
@@ -80,6 +79,12 @@ const GoalForm: React.FC<GoalFormProps> = ({ initialPeriod = 'daily' }) => {
           { value: 'yearly', label: '年次' },
         ]}
         style={styles.segmentedButtons}
+        theme={{
+          colors: {
+            secondaryContainer: '#800020',
+            onSecondaryContainer: '#FFF',
+          },
+        }}
       />
 
       <View style={styles.inputContainer}>
