@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase } from '@/lib/supabase';
 import { PeriodType } from '../types/goal';
 
 // 目標データのインターフェース
@@ -16,50 +16,77 @@ export interface GoalData {
 
 // 単一の目標を取得
 export const getGoal = async (userId: string, period: PeriodType) => {
-  const { data, error } = await supabase
-    .from('goals')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('period_type', period)
-    .single();
+  console.log(`getGoal呼び出し: userId=${userId}, period=${period}`);
+  try {
+    const { data, error } = await supabase
+      .from('goals')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('period_type', period)
+      .single();
 
-  return { data, error };
+    console.log(`getGoal結果:`, { data, error });
+    return { data, error };
+  } catch (err) {
+    console.error('getGoalエラー:', err);
+    return { data: null, error: err };
+  }
 };
 
 // 全期間の目標を取得
 export const getAllGoals = async (userId: string) => {
-  const { data, error } = await supabase
-    .from('goals')
-    .select('*')
-    .eq('user_id', userId);
+  console.log(`getAllGoals呼び出し: userId=${userId}`);
+  try {
+    const { data, error } = await supabase
+      .from('goals')
+      .select('*')
+      .eq('user_id', userId);
 
-  return { data, error };
+    console.log(`getAllGoals結果:`, { data, error });
+    return { data, error };
+  } catch (err) {
+    console.error('getAllGoalsエラー:', err);
+    return { data: null, error: err };
+  }
 };
 
 // 目標を作成または更新
 export const upsertGoal = async (goalData: GoalData) => {
   console.log('upsertGoal呼び出し:', goalData);
-  const { data, error } = await supabase
-    .from('goals')
-    .upsert(goalData, { 
-      onConflict: 'user_id,period_type',
-      ignoreDuplicates: false
-    })
-    .select()
-    .single();
+  try {
+    // supabaseクライアントのログ
+    console.log('supabaseクライアントの状態:', supabase);
+    
+    const { data, error } = await supabase
+      .from('goals')
+      .upsert(goalData, { 
+        onConflict: 'user_id,period_type',
+        ignoreDuplicates: false
+      })
+      .select()
+      .single();
 
-  console.log('upsertGoal結果:', { data, error });
-  return { data, error };
+    console.log('upsertGoal結果:', { data, error });
+    return { data, error };
+  } catch (err) {
+    console.error('upsertGoalエラー:', err);
+    return { data: null, error: err };
+  }
 };
 
 // 目標を削除
 export const deleteGoal = async (goalId: string) => {
-  const { error } = await supabase
-    .from('goals')
-    .delete()
-    .eq('id', goalId);
+  try {
+    const { error } = await supabase
+      .from('goals')
+      .delete()
+      .eq('id', goalId);
 
-  return { error };
+    return { error };
+  } catch (err) {
+    console.error('deleteGoalエラー:', err);
+    return { error: err };
+  }
 };
 
 // デバッグ用にすべての目標を取得する関数
@@ -101,15 +128,20 @@ export const insertTestGoal = async (userId: string) => {
     instant_cv_target: 2
   };
   
-  const { data, error } = await supabase
-    .from('goals')
-    .insert(testData)
-    .select()
-    .single();
-  
-  console.log('テストデータ挿入結果:', { data, error });
-  
-  return { data, error };
+  try {
+    const { data, error } = await supabase
+      .from('goals')
+      .insert(testData)
+      .select()
+      .single();
+    
+    console.log('テストデータ挿入結果:', { data, error });
+    
+    return { data, error };
+  } catch (err) {
+    console.error('テストデータ挿入エラー:', err);
+    return { data: null, error: err };
+  }
 };
 
 // エラータイプの定義

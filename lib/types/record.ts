@@ -37,7 +37,12 @@ export interface RecordContextType {
 
 export interface GoalContextType {
   goals: Record<PeriodType, GoalValues>;
+  loading: boolean;
+  error: Error | null;
+  isOnline: boolean;
   setGoal: (period: PeriodType, values: GoalValues) => Promise<void>;
   getGoal: (period: PeriodType) => GoalValues;
-  loading: boolean;
+  updateGoal: (period: PeriodType, values: Partial<GoalValues>) => Promise<void>;
+  resetGoal: (period: PeriodType) => Promise<void>;
+  syncGoals: () => Promise<void>;
 }

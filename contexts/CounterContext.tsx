@@ -3,7 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CounterType } from '@/components/counter/CounterButton';
 import { useAuth } from '@/contexts/AuthContext';
 import * as recordService from '@/services/record';
-import * as goalService from '../src/services/goal';
+import * as goalService from '@/src/services/goal';
+import { Alert } from 'react-native';
 
 export type PeriodType = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
@@ -109,33 +110,70 @@ export function CounterProvider({ children }: { children: React.ReactNode }) {
     if (!user) return;
     
     try {
+      console.log('Supabaseから目標値を読み込み開始...');
+      
       // 全期間の目標を取得
       const periods: PeriodType[] = ['daily', 'weekly', 'monthly', 'yearly'];
-      const newPeriodicTargets = { ...periodicTargets };
+      const newPeriodicTargets = { ...defaultTargets }; // デフォルト値から始める
       let hasUpdates = false;
       
-      for (const period of periods) {
-        const { data, error } = await goalService.getGoal(user.id, period);
+      // まず、すべての目標を取得
+      try {
+        console.log('すべての目標を取得中...');
+        const { data: allGoals, error: allError } = await goalService.getAllGoals(user.id);
         
-        if (error) {
-          if (error.code === 'PGRST116') {
-            // データが存在しない場合は無視
-            console.log(`${period}の目標がまだ設定されていません`);
-            continue;
+        if (!allError && allGoals && allGoals.length > 0) {
+          console.log('全期間の目標データ取得成功:', allGoals);
+          
+          // 取得した目標データをマッピング
+          allGoals.forEach(goal => {
+            const period = goal.period_type as PeriodType;
+            if (periods.includes(period)) {
+              newPeriodicTargets[period] = {
+                approached: goal.approached_target,
+                getContact: goal.get_contacts_target,
+                instantDate: goal.instant_dates_target,
+                instantCv: goal.instant_cv_target,
+              };
+              hasUpdates = true;
+            }
+          });
+        } else {
+          console.log('全期間の目標データが取得できなかったため、個別に取得します', { allError });
+          
+          // 個別に各期間の目標を取得
+          for (const period of periods) {
+            try {
+              console.log(`${period}の目標を取得中...`);
+              const { data, error } = await goalService.getGoal(user.id, period);
+              
+              if (error) {
+                if (error.code === 'PGRST116') {
+                  // データが存在しない場合は無視
+                  console.log(`${period}の目標がまだ設定されていません`);
+                  continue;
+                }
+                throw error;
+              }
+              
+              if (data) {
+                console.log(`${period}の目標をロード:`, data);
+                newPeriodicTargets[period] = {
+                  approached: data.approached_target,
+                  getContact: data.get_contacts_target,
+                  instantDate: data.instant_dates_target,
+                  instantCv: data.instant_cv_target,
+                };
+                hasUpdates = true;
+              }
+            } catch (periodError) {
+              console.error(`${period}の目標取得エラー:`, periodError);
+              // 一つの期間でエラーがあっても他の期間は続行
+            }
           }
-          throw error;
         }
-        
-        if (data) {
-          console.log(`${period}の目標をロード:`, data);
-          newPeriodicTargets[period] = {
-            approached: data.approached_target,
-            getContact: data.get_contacts_target,
-            instantDate: data.instant_dates_target,
-            instantCv: data.instant_cv_target,
-          };
-          hasUpdates = true;
-        }
+      } catch (allGoalsError) {
+        console.error('全期間の目標データ取得エラー:', allGoalsError);
       }
       
       if (hasUpdates) {
@@ -146,11 +184,13 @@ export function CounterProvider({ children }: { children: React.ReactNode }) {
         // AsyncStorageに保存
         await AsyncStorage.setItem(TARGETS_STORAGE_KEY, JSON.stringify(newPeriodicTargets));
         console.log('Supabaseから目標値を読み込みました');
+      } else {
+        console.log('更新すべき目標値がありませんでした');
       }
     } catch (err) {
       console.error('Supabaseからの目標値読み込みエラー:', err);
     }
-  }, [user, periodicTargets]);
+  }, [user]);
 
   // 目標値の読み込み
   useEffect(() => {
@@ -259,12 +299,7 @@ export function CounterProvider({ children }: { children: React.ReactNode }) {
   // アプリ起動時に明示的に再初期化
   useEffect(() => {
     resetCounters();
-    
-    // ユーザーがログインしていればSupabaseから目標も読み込む
-    if (user) {
-      loadTargetsFromSupabase();
-    }
-  }, [resetCounters, user]);
+  }, [resetCounters]);
 
   // 現在の期間の目標値を取得
   const targets = periodicTargets[currentPeriod];
@@ -333,23 +368,32 @@ export function CounterProvider({ children }: { children: React.ReactNode }) {
           instant_cv_target: updatedPeriodicTargets[period].instantCv
         };
         
-        console.log('送信するgolデータ:', goalData);
+        console.log('送信するgoalデータ:', goalData);
         
-        const { data, error } = await goalService.upsertGoal(goalData);
-        
-        console.log('目標値保存結果:', { data, error });
-        
-        if (error) {
-          console.error('Supabaseへの目標値保存エラー:', error);
-          return { success: false, error };
+        try {
+          const { data, error } = await goalService.upsertGoal(goalData);
+          
+          console.log('目標値保存結果:', { data, error });
+          
+          if (error) {
+            console.error('Supabaseへの目標値保存エラー:', error);
+            Alert.alert('保存エラー', 'Supabaseへの保存に失敗しました: ' + JSON.stringify(error));
+            return { success: false, error };
+          }
+          
+          console.log('Supabaseに目標値を保存しました:', period);
+          Alert.alert('保存成功', `${period}の目標値をSupabaseに保存しました`);
+        } catch (saveError) {
+          console.error('Supabase保存中の例外:', saveError);
+          Alert.alert('保存例外', '保存中に例外が発生しました: ' + JSON.stringify(saveError));
+          return { success: false, error: saveError };
         }
-        
-        console.log('Supabaseに目標値を保存しました:', period);
       }
 
       return { success: true, error: null };
     } catch (error) {
       console.error('目標値更新エラー:', error);
+      Alert.alert('更新エラー', '目標値の更新中にエラーが発生しました: ' + JSON.stringify(error));
       return { success: false, error };
     }
   }, [periodicTargets, user]);

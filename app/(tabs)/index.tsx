@@ -97,23 +97,21 @@ function HomeScreen() {
           >Rizz</ThemedText>
           <ThemedText
             style={styles.headerDate}
-            lightColor="#FFFFFF"
+            lightColor="#0A0F23"
             darkColor="#FFFFFF"
           >
             {formattedDate}
           </ThemedText>
           <ThemedText
             style={styles.headerUserName}
-            lightColor="#FFFFFF"
+            lightColor="#0A0F23"
             darkColor="#FFFFFF"
           >
             {user?.user_metadata?.name ? `${user.user_metadata.name}さん` : 'ゲストさん'}
           </ThemedText>
         </ThemedView>
       }
-
       >
-
       {/* 統合カウンターセクション */}
       <ThemedView style={styles.counterSection}>
         <ThemedView style={styles.sectionHeader}>
@@ -311,7 +309,7 @@ function HomeScreen() {
 const styles = StyleSheet.create({
   headerContent: {
     marginTop: 32,
-    padding: 16,
+    paddingLeft: 16,
   },
   headerTitle: {
     fontSize: 32,
@@ -326,11 +324,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   counterSection: {
-    gap: 16,
-    marginBottom: 24,
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: 'rgba(54, 69, 79, 0.2)', // チャコールグレー（薄め）
+    gap: 8,
   },
   sectionHeader: {
     flexDirection: 'row',

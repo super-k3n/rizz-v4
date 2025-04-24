@@ -30,6 +30,7 @@ export async function signUp(email: string, password: string, name: string) {
               id: data.user.id,
               name,
               email,
+              theme_preference: 'dark', // ダークモードをデフォルトに設定
             },
           ]);
 

@@ -10,8 +10,9 @@ import { Provider as PaperProvider, MD3LightTheme as PaperDefaultTheme, MD3DarkT
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { RecordProvider } from '@/contexts/RecordContext';
-import { GoalProvider } from '../src/contexts/GoalContext';
+import { GoalProvider } from '@/contexts/GoalContext';
 import { CounterProvider } from '@/contexts/CounterContext';
+import { ProfileProvider } from '@/contexts/ProfileContext';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -52,7 +53,8 @@ function AuthRedirect() {
 
 // 明示的なデフォルトエクスポート
 function RootLayout() {
-  const colorScheme = useColorScheme();
+  // カスタムuseColorSchemeフックを使用
+  const { colorScheme } = useColorScheme();
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
@@ -91,24 +93,26 @@ function RootLayout() {
 
   return (
     <AuthProvider>
-      <CounterProvider>
-        <RecordProvider>
-          <GoalProvider>
-            <PaperProvider theme={theme}>
-              <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-                {/* AuthRedirectコンポーネントを有効化 */}
-                <AuthRedirect />
-                <Stack initialRouteName="(auth)">
-                  <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                  <Stack.Screen name="+not-found" />
-                </Stack>
-                <StatusBar style="auto" />
-              </ThemeProvider>
-            </PaperProvider>
-          </GoalProvider>
-        </RecordProvider>
-      </CounterProvider>
+      <ProfileProvider>
+        <CounterProvider>
+          <RecordProvider>
+            <GoalProvider>
+              <PaperProvider theme={theme}>
+                <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                  {/* AuthRedirectコンポーネントを有効化 */}
+                  <AuthRedirect />
+                  <Stack initialRouteName="(auth)">
+                    <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                    <Stack.Screen name="+not-found" />
+                  </Stack>
+                  <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+                </ThemeProvider>
+              </PaperProvider>
+            </GoalProvider>
+          </RecordProvider>
+        </CounterProvider>
+      </ProfileProvider>
     </AuthProvider>
   );
 }
