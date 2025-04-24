@@ -22,24 +22,31 @@ export const useColorScheme = (): ColorSchemeHook => {
       try {
         const storedColorScheme = await AsyncStorage.getItem(COLOR_SCHEME_KEY);
         if (storedColorScheme) {
+          console.log('保存されたテーマを読み込みました:', storedColorScheme);
           setColorSchemeState(storedColorScheme as ColorScheme);
         } else {
-          setColorSchemeState(nativeColorScheme);
+          console.log('保存されたテーマがないため、デフォルトを使用します: dark');
+          setColorSchemeState('dark'); // デフォルトをダークモードに変更
+          // 初回読み込み時に保存する
+          await AsyncStorage.setItem(COLOR_SCHEME_KEY, 'dark');
         }
       } catch (error) {
         console.error('カラースキームの読み込みエラー:', error);
-        setColorSchemeState(nativeColorScheme);
+        setColorSchemeState('dark'); // エラー時もダークモードに変更
       }
     };
 
     loadStoredColorScheme();
-  }, [nativeColorScheme]);
+  }, []);
 
   // カラースキームを設定し、永続化
   const setColorScheme = async (scheme: 'light' | 'dark') => {
     try {
-      await AsyncStorage.setItem(COLOR_SCHEME_KEY, scheme);
+      console.log('テーマを設定します:', scheme);
+      // まずステートを更新して、UIが即座に反映されるようにする
       setColorSchemeState(scheme);
+      // 次にローカルストレージに保存
+      await AsyncStorage.setItem(COLOR_SCHEME_KEY, scheme);
     } catch (error) {
       console.error('カラースキームの保存エラー:', error);
     }

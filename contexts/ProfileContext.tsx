@@ -44,7 +44,21 @@ export const ProfileProvider: React.FC<ProfileProviderProps> = ({ children }) =>
       setLoading(true);
       setError(null);
       const profileData = await profileService.getProfile();
-      setProfile(profileData);
+      
+      // プロフィールのテーマ設定がない場合、ダークモードをデフォルトに設定
+      if (profileData && profileData.theme_preference !== 'dark') {
+        try {
+          await profileService.updateTheme('dark');
+          const updatedProfile = await profileService.getProfile();
+          setProfile(updatedProfile);
+        } catch (themeErr) {
+          console.error('テーマ設定エラー:', themeErr);
+          // テーマ更新エラーは無視して元のプロフィールを設定
+          setProfile(profileData);
+        }
+      } else {
+        setProfile(profileData);
+      }
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Unknown error occurred'));
     } finally {
