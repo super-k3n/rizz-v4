@@ -2,35 +2,29 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
 import { Button, Text, TextInput, SegmentedButtons, HelperText } from 'react-native-paper';
 import { PeriodType } from '../../types/goal';
-import { useGoal } from '@/contexts/GoalContext';
+import { useCounter } from '@/contexts/CounterContext';
 
 interface GoalFormProps {
   initialPeriod?: PeriodType;
 }
 
 const GoalForm: React.FC<GoalFormProps> = ({ initialPeriod = 'daily' }) => {
-  const { goals, updateGoal, loading, error, isOnline } = useGoal();
+  const { periodicTargets, updateTargets, loading: ctxLoading } = useCounter();
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>(initialPeriod);
   const [approached, setApproached] = useState('0');
   const [getContact, setGetContact] = useState('0');
   const [instantDate, setInstantDate] = useState('0');
   const [instantCv, setInstantCv] = useState('0');
+  const [loading, setLoading] = useState(false);
 
   // 選択された期間が変わったら、フォームの値を更新
   useEffect(() => {
-    const currentGoal = goals[selectedPeriod];
+    const currentGoal = periodicTargets[selectedPeriod];
     setApproached(currentGoal.approached.toString());
     setGetContact(currentGoal.getContact.toString());
     setInstantDate(currentGoal.instantDate.toString());
     setInstantCv(currentGoal.instantCv.toString());
-  }, [selectedPeriod, goals]);
-
-  // エラー発生時にアラートを表示
-  useEffect(() => {
-    if (error) {
-      Alert.alert('エラー', error.message);
-    }
-  }, [error]);
+  }, [selectedPeriod, periodicTargets]);
 
   // 数値入力のバリデーション
   const validateNumber = (value: string) => {
@@ -49,26 +43,31 @@ const GoalForm: React.FC<GoalFormProps> = ({ initialPeriod = 'daily' }) => {
       return;
     }
 
-    // 目標値の更新
-    await updateGoal(selectedPeriod, {
-      period: selectedPeriod,
-      approached: parseInt(approached, 10),
-      getContact: parseInt(getContact, 10),
-      instantDate: parseInt(instantDate, 10),
-      instantCv: parseInt(instantCv, 10),
-    });
+    setLoading(true);
+    try {
+      // 目標値の更新
+      const result = await updateTargets(selectedPeriod, {
+        approached: parseInt(approached, 10),
+        getContact: parseInt(getContact, 10),
+        instantDate: parseInt(instantDate, 10),
+        instantCv: parseInt(instantCv, 10),
+      });
 
-    Alert.alert('保存完了', `${selectedPeriod}の目標値を更新しました。${!isOnline ? '（オフライン保存）' : ''}`);
+      if (result.success) {
+        Alert.alert('保存完了', `${selectedPeriod}の目標値を更新しました。`);
+      } else {
+        Alert.alert('エラー', `目標値の更新に失敗しました: ${JSON.stringify(result.error)}`);
+      }
+    } catch (error) {
+      console.error('目標値更新エラー:', error);
+      Alert.alert('エラー', '目標値の更新中にエラーが発生しました');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <View style={styles.container}>
-      {!isOnline && (
-        <View style={styles.offlineContainer}>
-          <Text style={styles.offlineText}>オフラインモード: 変更はオンライン復帰時に同期されます</Text>
-        </View>
-      )}
-
       <Text style={styles.title}>目標設定</Text>
 
       <SegmentedButtons
@@ -146,8 +145,8 @@ const GoalForm: React.FC<GoalFormProps> = ({ initialPeriod = 'daily' }) => {
       <Button
         mode="contained"
         onPress={handleSubmit}
-        loading={loading}
-        disabled={loading}
+        loading={loading || ctxLoading.approached}
+        disabled={loading || ctxLoading.approached}
         style={styles.button}
       >
         保存

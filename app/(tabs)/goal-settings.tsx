@@ -4,31 +4,30 @@ import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { Button } from 'react-native-paper';
 import GoalForm from '../../src/components/goal/GoalForm';
-import { useGoal } from '@/contexts/GoalContext';
+import { useCounter } from '@/contexts/CounterContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { ActivityIndicator } from 'react-native-paper';
 import { debugGoals, insertTestGoal } from '../../src/services/goal';
 
 export default function GoalSettingsScreen() {
-  const { loading, syncGoals, error } = useGoal();
+  const { resetCounters, loading } = useCounter();
   const { user } = useAuth();
+  const [refreshing, setRefreshing] = React.useState(false);
 
   // 画面が表示されたときにデータを同期
   useEffect(() => {
-    syncGoals();
+    resetCounters();
   }, []);
 
-  // エラー発生時にアラートを表示
-  useEffect(() => {
-    if (error) {
-      Alert.alert('エラー', error.message);
-    }
-  }, [error]);
-
   // プルダウンリフレッシュの処理
-  const onRefresh = React.useCallback(() => {
-    syncGoals();
-  }, [syncGoals]);
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await resetCounters();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [resetCounters]);
 
   // デバッグ機能: Supabaseデータ確認
   const runDebug = async () => {
@@ -75,7 +74,7 @@ export default function GoalSettingsScreen() {
       style={styles.scrollView}
       contentContainerStyle={styles.scrollContent}
       refreshControl={
-        <RefreshControl refreshing={loading} onRefresh={onRefresh} />
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
       <ThemedView style={styles.container}>
@@ -86,7 +85,7 @@ export default function GoalSettingsScreen() {
           日、週、月、年ごとの目標を設定できます。
         </ThemedText>
 
-        {loading ? (
+        {refreshing ? (
           <ActivityIndicator size="large" style={styles.loader} />
         ) : (
           <GoalForm initialPeriod="daily" />
