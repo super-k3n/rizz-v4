@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { StatisticsData } from '../types/statistics';
+import { StatisticsData } from '@/src/types/statistics';
 
 export async function getDailyStats(startDate: string, endDate: string): Promise<StatisticsData[]> {
   const { data, error } = await supabase.rpc('get_daily_stats', {

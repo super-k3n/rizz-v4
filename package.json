@@ -16,11 +16,13 @@
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.2",
-    "@react-native-async-storage/async-storage": "^2.1.2",
+    "@react-native-async-storage/async-storage": "^1.23.1",
     "@react-native-community/netinfo": "^11.4.1",
     "@react-navigation/bottom-tabs": "^7.2.0",
     "@react-navigation/native": "^7.0.14",
+    "@shopify/react-native-skia": "^1.5.0",
     "@supabase/supabase-js": "^2.49.4",
+    "@types/victory": "^33.1.5",
     "date-fns": "^4.1.0",
     "dotenv": "^16.5.0",
     "expo": "~52.0.46",
@@ -35,6 +37,7 @@
     "expo-status-bar": "~2.0.1",
     "expo-symbols": "~0.2.2",
     "expo-system-ui": "~4.0.9",
+    "expo-updates": "~0.27.4",
     "expo-web-browser": "~14.0.2",
     "formik": "^2.4.6",
     "react": "18.3.1",
@@ -48,8 +51,10 @@
     "react-native-url-polyfill": "^2.0.0",
     "react-native-web": "~0.19.13",
     "react-native-webview": "13.12.5",
-    "yup": "^1.6.1",
-    "expo-updates": "~0.27.4"
+    "victory-core": "^37.3.6",
+    "victory-native": "^41.17.1",
+    "victory-shared-events": "^37.3.6",
+    "yup": "^1.6.1"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
