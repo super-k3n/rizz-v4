@@ -3,7 +3,7 @@ import { Button } from 'react-native-paper';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { router } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { CounterType } from '@/lib/types/record';
 
 import ParallaxScrollView from '@/components/ParallaxScrollView';
@@ -15,6 +15,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCounter } from '@/contexts/CounterContext';
 import { useRecord } from '@/contexts/RecordContext';
 import { useProfile } from '@/contexts/ProfileContext';
+import { useGoal } from '@/contexts/GoalContext';
 import { debugAuthAndProfile } from '@/services/auth-debug';
 import { resetCounters } from '@/services/reset-counters';
 
@@ -22,8 +23,15 @@ import { resetCounters } from '@/services/reset-counters';
 function HomeScreen() {
   const { user, signOut, isLoading: authLoading } = useAuth();
   const { profile } = useProfile();
-  const { counters, targets, loading: counterLoading, resetCounters: resetCounterContext } = useCounter();
+  const { counters, loading: counterLoading, resetCounters: resetCounterContext } = useCounter();
   const { incrementCounter, loading: recordLoading, error, isOnline } = useRecord();
+  const { getGoal, loading: goalLoading } = useGoal();
+  const [targets, setTargets] = useState({
+    approached: 0,
+    getContact: 0,
+    instantDate: 0,
+    instantCv: 0,
+  });
   const today = new Date();
   const formattedDate = format(today, 'yyyy年MM月dd日（EEEE）', { locale: ja });
 
@@ -35,7 +43,25 @@ function HomeScreen() {
 
     // カウンターと目標値をリセット
     resetCounterContext();
+    loadDailyGoals(today);
   }, []);
+
+  // 日次目標を読み込む
+  const loadDailyGoals = async (date: string) => {
+    try {
+      const goal = await getGoal('daily', date);
+      if (goal) {
+        setTargets({
+          approached: goal.approached,
+          getContact: goal.getContact,
+          instantDate: goal.instantDate,
+          instantCv: goal.instantCv,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load daily goals:', error);
+    }
+  };
 
   // 現在の日付を取得する関数
   const getCurrentDate = () => {
@@ -94,9 +120,9 @@ function HomeScreen() {
   // 目標値を再読み込み
   const reloadTargets = async () => {
     try {
-      // CounterContextのリセット関数を呼び出し（これによってSupabaseからも読み込まれる）
-      await resetCounterContext();
-      Alert.alert('成功', 'カウンターと目標値を再読み込みしました');
+      const today = getCurrentDate();
+      await loadDailyGoals(today);
+      Alert.alert('成功', '目標値を再読み込みしました');
     } catch (error) {
       console.error('目標値の再読み込みエラー:', error);
       Alert.alert('エラー', '目標値の再読み込み中にエラーが発生しました');
