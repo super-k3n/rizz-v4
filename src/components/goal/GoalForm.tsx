@@ -20,10 +20,12 @@ const GoalForm: React.FC<GoalFormProps> = ({ initialPeriod = 'daily' }) => {
   // 選択された期間が変わったら、フォームの値を更新
   useEffect(() => {
     const currentGoal = periodicTargets[selectedPeriod];
-    setApproached(currentGoal.approached.toString());
-    setGetContact(currentGoal.getContact.toString());
-    setInstantDate(currentGoal.instantDate.toString());
-    setInstantCv(currentGoal.instantCv.toString());
+    if (currentGoal) {
+      setApproached(currentGoal.approached.toString());
+      setGetContact(currentGoal.getContact.toString());
+      setInstantDate(currentGoal.instantDate.toString());
+      setInstantCv(currentGoal.instantCv.toString());
+    }
   }, [selectedPeriod, periodicTargets]);
 
   // 数値入力のバリデーション
@@ -54,21 +56,32 @@ const GoalForm: React.FC<GoalFormProps> = ({ initialPeriod = 'daily' }) => {
       });
 
       if (result.success) {
-        Alert.alert('保存完了', `${selectedPeriod}の目標値を更新しました。`);
+        Alert.alert('保存完了', `${selectedPeriod === 'daily' ? '本日' : selectedPeriod}の目標値を更新しました。`);
       } else {
-        Alert.alert('エラー', `目標値の更新に失敗しました: ${JSON.stringify(result.error)}`);
+        const errorMessage = result.error?.message || JSON.stringify(result.error);
+        Alert.alert('エラー', `目標値の更新に失敗しました: ${errorMessage}`);
       }
     } catch (error) {
       console.error('目標値更新エラー:', error);
-      Alert.alert('エラー', '目標値の更新中にエラーが発生しました');
+      Alert.alert('エラー', '目標値の更新中にエラーが発生しました。ネットワーク接続を確認してください。');
     } finally {
       setLoading(false);
     }
   };
 
+  // 期間に応じたラベルを取得
+  const getPeriodLabel = (period: PeriodType) => {
+    switch (period) {
+      case 'daily': return '日次';
+      case 'weekly': return '週次';
+      case 'monthly': return '月次';
+      case 'yearly': return '年次';
+      default: return period;
+    }
+  };
+
   return (
     <View style={styles.container}>
-
       <SegmentedButtons
         value={selectedPeriod}
         onValueChange={value => setSelectedPeriod(value as PeriodType)}
@@ -157,7 +170,7 @@ const GoalForm: React.FC<GoalFormProps> = ({ initialPeriod = 'daily' }) => {
         disabled={loading || ctxLoading.approached}
         style={styles.button}
       >
-        保存
+        {`${getPeriodLabel(selectedPeriod)}の目標を保存`}
       </Button>
     </View>
   );
