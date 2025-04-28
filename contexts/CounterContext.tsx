@@ -72,6 +72,7 @@ interface CounterContextType {
   currentPeriod: PeriodType;
   periodicTargets: PeriodicTargetsState;
   incrementCounter: (type: CounterType) => Promise<void>;
+  decrementCounter: (type: CounterType) => Promise<void>;
   updateTargets: (period: PeriodType, newTargets: Partial<TargetState>) => Promise<{ success: boolean; error: any }>;
   changePeriod: (period: PeriodType) => void;
   resetCounters: () => Promise<void>;
@@ -337,6 +338,37 @@ export function CounterProvider({ children }: { children: React.ReactNode }) {
     }
   }, [counters]);
 
+  // カウンターをデクリメントする関数
+  const decrementCounter = useCallback(async (type: CounterType) => {
+    // ローディング状態を開始
+    setLoading(prev => ({ ...prev, [type]: true }));
+
+    try {
+      // カウンター値を更新（0未満にならないように）
+      const newValue = Math.max(0, counters[type] - 1);
+      const newCounters = {
+        ...counters,
+        [type]: newValue,
+      };
+
+      // ステートを更新
+      setCounters(newCounters);
+
+      // AsyncStorageに保存
+      const today = new Date().toISOString().split('T')[0];
+      await AsyncStorage.setItem(COUNTERS_STORAGE_KEY, JSON.stringify({
+        date: today,
+        ...newCounters
+      }));
+    } catch (error) {
+      console.error('カウンター減算エラー:', error);
+      // エラーハンドリングをここに追加
+    } finally {
+      // ローディング状態を終了
+      setLoading(prev => ({ ...prev, [type]: false }));
+    }
+  }, [counters]);
+
   // 目標値を更新する関数
   const updateTargets = async (period: PeriodType, newTargets: Partial<TargetState>) => {
     if (!user) {
@@ -412,6 +444,7 @@ export function CounterProvider({ children }: { children: React.ReactNode }) {
     currentPeriod,
     periodicTargets,
     incrementCounter,
+    decrementCounter,
     updateTargets,
     changePeriod,
     resetCounters,
