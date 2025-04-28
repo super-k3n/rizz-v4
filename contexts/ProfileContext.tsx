@@ -44,7 +44,7 @@ export const ProfileProvider: React.FC<ProfileProviderProps> = ({ children }) =>
       setLoading(true);
       setError(null);
       const profileData = await profileService.getProfile();
-      
+
       // プロフィールのテーマ設定がない場合、ダークモードをデフォルトに設定
       if (profileData && profileData.theme_preference !== 'dark') {
         try {
