@@ -1,4 +1,21 @@
 {
-  "greeting": "Hello"
-  // 他の英語キー
+  "greeting": "Hello",
+  "greeting_user": "{{name}}",
+  "greeting_guest": "Guest",
+  "today_record": "Today's Record",
+  "goal_settings": "Goal Settings",
+  "approached": "Approached",
+  "get_contact": "Got Contact",
+  "instant_date": "Instant Date",
+  "instant_cv": "Instant Close",
+  "success": "Success",
+  "error": "Error",
+  "logout": "Logout",
+  "logout_success": "Logged out successfully",
+  "logout_error": "An error occurred during logout",
+  "reload_success": "Reloaded counters and goals",
+  "reload_error": "An error occurred while reloading",
+  "reload_button": "Reload Counters & Goals",
+  "offline_mode": "Offline mode: Changes will sync later",
+  "date_format": "yyyy/MM/dd (EEEE)"
 }

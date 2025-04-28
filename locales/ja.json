@@ -1,4 +1,21 @@
 {
-  "greeting": "こんにちは"
-  // 他の日本語キー
+  "greeting": "こんにちは",
+  "greeting_user": "{{name}}さん",
+  "greeting_guest": "ゲストさん",
+  "today_record": "本日の記録",
+  "goal_settings": "目標設定",
+  "approached": "声かけ数",
+  "get_contact": "バンゲ数",
+  "instant_date": "連れ出し数",
+  "instant_cv": "即数",
+  "success": "成功",
+  "error": "エラー",
+  "logout": "ログアウト",
+  "logout_success": "ログアウト成功",
+  "logout_error": "ログアウト中にエラーが発生しました",
+  "reload_success": "実績値と目標値を再読み込みしました",
+  "reload_error": "再読み込み中にエラーが発生しました",
+  "reload_button": "実績値・目標値再読込",
+  "offline_mode": "オフラインモード: 変更は後で同期されます",
+  "date_format": "yyyy年MM月dd日（EEEE）"
 }

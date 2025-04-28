@@ -7,6 +7,8 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { Provider as PaperProvider, MD3LightTheme as PaperDefaultTheme, MD3DarkTheme as PaperDarkTheme } from 'react-native-paper';
+import React from 'react';
+import i18n from '../src/libs/i18n';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
@@ -82,6 +84,20 @@ function RootLayout() {
   // 現在のカラースキームに基づくテーマを選択
   const theme = colorScheme === 'dark' ? combinedDarkTheme : combinedDefaultTheme;
 
+  // ProfileProvider配下でのみuseProfileが使えるため、useProfileをimportし、profile.languageでi18nを切り替え
+  // ただし、useProfileはProfileProvider配下でしか呼べないため、ProfileProviderの子でラップする必要がある
+  // そのため、ProfileProvider配下でラッパーを作成
+
+  function I18nLanguageSync({ children }: { children: React.ReactNode }) {
+    const { profile } = require('@/contexts/ProfileContext').useProfile();
+    React.useEffect(() => {
+      if (profile && typeof profile.language === 'number') {
+        i18n.changeLanguage(profile.language === 0 ? 'ja' : 'en');
+      }
+    }, [profile?.language]);
+    return children;
+  }
+
   useEffect(() => {
     if (loaded) {
       SplashScreen.hideAsync();
@@ -95,24 +111,26 @@ function RootLayout() {
   return (
     <AuthProvider>
       <ProfileProvider>
-        <CounterProvider>
-          <RecordProvider>
-            <GoalProvider>
-              <PaperProvider theme={theme}>
-                <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-                  {/* AuthRedirectコンポーネントを有効化 */}
-                  <AuthRedirect />
-                  <Stack initialRouteName="(auth)">
-                    <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                    <Stack.Screen name="+not-found" />
-                  </Stack>
-                  <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-                </ThemeProvider>
-              </PaperProvider>
-            </GoalProvider>
-          </RecordProvider>
-        </CounterProvider>
+        <I18nLanguageSync>
+          <CounterProvider>
+            <RecordProvider>
+              <GoalProvider>
+                <PaperProvider theme={theme}>
+                  <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                    {/* AuthRedirectコンポーネントを有効化 */}
+                    <AuthRedirect />
+                    <Stack initialRouteName="(auth)">
+                      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                      <Stack.Screen name="+not-found" />
+                    </Stack>
+                    <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+                  </ThemeProvider>
+                </PaperProvider>
+              </GoalProvider>
+            </RecordProvider>
+          </CounterProvider>
+        </I18nLanguageSync>
       </ProfileProvider>
     </AuthProvider>
   );

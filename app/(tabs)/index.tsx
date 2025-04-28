@@ -5,6 +5,7 @@ import { ja } from 'date-fns/locale';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import type { CounterType } from '@/lib/types/record';
+import { useTranslation } from 'react-i18next';
 
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
@@ -33,7 +34,8 @@ function HomeScreen() {
     instantCv: 0,
   });
   const today = new Date();
-  const formattedDate = format(today, 'yyyy年MM月dd日（EEEE）', { locale: ja });
+  const { t } = useTranslation();
+  const formattedDate = format(today, t('date_format', { defaultValue: 'yyyy年MM月dd日（EEEE）' }), { locale: ja });
 
   // 画面が表示されたとき、カウンターと目標値をリセット
   useEffect(() => {
@@ -86,10 +88,10 @@ function HomeScreen() {
   const handleLogout = async () => {
     try {
       await signOut();
-      console.log('ログアウト成功');
+      console.log(t('logout_success'));
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'ログアウト中にエラーが発生しました';
-      Alert.alert('エラー', errorMessage);
+      const errorMessage = error instanceof Error ? error.message : t('logout_error');
+      Alert.alert(t('error'), errorMessage);
     }
   };
 
@@ -105,10 +107,10 @@ function HomeScreen() {
       await resetCounterContext();
       const today = getCurrentDate();
       await loadDailyGoals(today);
-      Alert.alert('成功', '実績値と目標値を再読み込みしました');
+      Alert.alert(t('success'), t('reload_success'));
     } catch (error) {
       console.error('再読み込みエラー:', error);
-      Alert.alert('エラー', '再読み込み中にエラーが発生しました');
+      Alert.alert(t('error'), t('reload_error'));
     }
   };
 
@@ -139,7 +141,7 @@ function HomeScreen() {
             lightColor="#0A0F23"
             darkColor="#FFFFFF"
           >
-            {profile?.name ? `${profile.name}さん` : 'ゲストさん'}
+            {profile?.name ? profile.name : t('greeting_guest')}
           </ThemedText>
         </ThemedView>
       }
@@ -153,7 +155,7 @@ function HomeScreen() {
             darkColor="#C09E5C"
             style={styles.sectionTitle}
           >
-            本日の記録
+            {t('today_record')}
           </ThemedText>
 
           <Button
@@ -162,7 +164,7 @@ function HomeScreen() {
             icon="cog"
             textColor="#C09E5C"
           >
-            目標設定
+            {t('goal_settings')}
           </Button>
         </ThemedView>
 
@@ -174,7 +176,7 @@ function HomeScreen() {
               lightColor="#0A0F23"
               darkColor="#FFFFFF"
             >
-              声かけ数: {todayRecord.approached ?? 0} / {targets.approached}{' '}
+              {t('approached')}: {todayRecord.approached ?? 0} / {targets.approached}{' '}
               <ThemedText
                 style={[styles.counterLabel, styles.progressText]}
                 lightColor="#D4AF37"
@@ -210,7 +212,7 @@ function HomeScreen() {
               lightColor="#0A0F23"
               darkColor="#FFFFFF"
             >
-              バンゲ数: {todayRecord.get_contact ?? 0} / {targets.getContact}{' '}
+              {t('get_contact')}: {todayRecord.get_contact ?? 0} / {targets.getContact}{' '}
               <ThemedText
                 style={[styles.counterLabel, styles.progressText]}
                 lightColor="#D4AF37"
@@ -246,7 +248,7 @@ function HomeScreen() {
               lightColor="#0A0F23"
               darkColor="#FFFFFF"
             >
-              連れ出し数: {todayRecord.instant_date ?? 0} / {targets.instantDate}{' '}
+              {t('instant_date')}: {todayRecord.instant_date ?? 0} / {targets.instantDate}{' '}
               <ThemedText
                 style={[styles.counterLabel, styles.progressText]}
                 lightColor="#D4AF37"
@@ -282,7 +284,7 @@ function HomeScreen() {
               lightColor="#0A0F23"
               darkColor="#FFFFFF"
             >
-              即数: {todayRecord.instant_cv ?? 0} / {targets.instantCv}{' '}
+              {t('instant_cv')}: {todayRecord.instant_cv ?? 0} / {targets.instantCv}{' '}
               <ThemedText
                 style={[styles.counterLabel, styles.progressText]}
                 lightColor="#D4AF37"
@@ -314,13 +316,13 @@ function HomeScreen() {
       {/* ネットワーク状態とエラー表示 */}
       {!isOnline && (
         <ThemedView style={[styles.statusContainer, styles.offlineContainer]}>
-          <ThemedText style={styles.statusText}>オフラインモード: 変更は後で同期されます</ThemedText>
+          <ThemedText style={styles.statusText}>{t('offline_mode')}</ThemedText>
         </ThemedView>
       )}
 
       {error && (
         <ThemedView style={[styles.statusContainer, styles.errorContainer]}>
-          <ThemedText style={styles.statusText}>エラー: {error}</ThemedText>
+          <ThemedText style={styles.statusText}>{t('error')}: {error}</ThemedText>
         </ThemedView>
       )}
 
@@ -333,7 +335,15 @@ function HomeScreen() {
               onPress={reloadTargets}
               style={{marginTop: 8, borderColor: '#5c6bc0'}}
             >
-              実績値・目標値再読込
+              {t('reload_button')}
+            </Button>
+            <Button
+              mode="contained"
+              onPress={handleLogout}
+              style={styles.logoutButton}
+              textColor="#FFF"
+            >
+              {t('logout')}
             </Button>
           </ThemedView>
         ) : null}
