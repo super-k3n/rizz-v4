@@ -12,6 +12,7 @@ export interface CounterButtonProps {
   type: CounterType;
   count: number;
   onIncrement: () => void;
+  onDecrement?: () => void;
   loading?: boolean;
   icon?: string;
   color?: string;
@@ -46,6 +47,7 @@ export function CounterButton({
   type,
   count,
   onIncrement,
+  onDecrement,
   loading = false,
   icon,
   color,
@@ -57,21 +59,34 @@ export function CounterButton({
 
   if (compact) {
     return (
-      <TouchableOpacity
-        style={[styles.compactButton, { backgroundColor: buttonColor }]}
-        onPress={onIncrement}
-        disabled={loading}
-        activeOpacity={0.7}
-        accessibilityLabel={`${config.label}を増やす`}
-        accessibilityHint="タップすると数値が1増えます"
-        accessibilityRole="button"
-      >
-        {loading ? (
-          <ActivityIndicator color="#FFFFFF" size={18} />
-        ) : (
-          <MaterialCommunityIcons name={iconName as any} size={24} color="#FFFFFF" />
-        )}
-      </TouchableOpacity>
+      <ThemedView style={styles.compactContainer}>
+        <TouchableOpacity
+          style={[styles.compactButton, { backgroundColor: buttonColor }]}
+          onPress={onDecrement}
+          disabled={loading || !onDecrement || count <= 0}
+          activeOpacity={0.7}
+          accessibilityLabel={`${config.label}を減らす`}
+          accessibilityHint="タップすると数値が1減ります"
+          accessibilityRole="button"
+        >
+          <MaterialCommunityIcons name="minus" size={20} color="#FFFFFF" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.compactButton, { backgroundColor: buttonColor }]}
+          onPress={onIncrement}
+          disabled={loading}
+          activeOpacity={0.7}
+          accessibilityLabel={`${config.label}を増やす`}
+          accessibilityHint="タップすると数値が1増えます"
+          accessibilityRole="button"
+        >
+          {loading ? (
+            <ActivityIndicator color="#FFFFFF" size={18} />
+          ) : (
+            <MaterialCommunityIcons name={iconName as any} size={24} color="#FFFFFF" />
+          )}
+        </TouchableOpacity>
+      </ThemedView>
     );
   }
 
@@ -84,30 +99,41 @@ export function CounterButton({
       >
         {config.label}
       </ThemedText>
-
-      <TouchableOpacity
-        style={[styles.button, { backgroundColor: buttonColor }]}
-        onPress={onIncrement}
-        disabled={loading}
-        activeOpacity={0.7}
-        accessibilityLabel={`${config.label}を増やす`}
-        accessibilityHint="タップすると数値が1増えます"
-        accessibilityRole="button"
-      >
-        {loading ? (
-          <ActivityIndicator color="#FFFFFF" size={24} />
-        ) : (
-          <MaterialCommunityIcons name={iconName as any} size={32} color="#FFFFFF" />
-        )}
-      </TouchableOpacity>
-
-      <ThemedText
-        style={styles.count}
-        lightColor="#FFFFFF"
-        darkColor="#FFFFFF"
-      >
-        {count}
-      </ThemedText>
+      <ThemedView style={styles.buttonRow}>
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: buttonColor }]}
+          onPress={onDecrement}
+          disabled={loading || !onDecrement || count <= 0}
+          activeOpacity={0.7}
+          accessibilityLabel={`${config.label}を減らす`}
+          accessibilityHint="タップすると数値が1減ります"
+          accessibilityRole="button"
+        >
+          <MaterialCommunityIcons name="minus" size={32} color="#FFFFFF" />
+        </TouchableOpacity>
+        <ThemedText
+          style={styles.count}
+          lightColor="#FFFFFF"
+          darkColor="#FFFFFF"
+        >
+          {count}
+        </ThemedText>
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: buttonColor }]}
+          onPress={onIncrement}
+          disabled={loading}
+          activeOpacity={0.7}
+          accessibilityLabel={`${config.label}を増やす`}
+          accessibilityHint="タップすると数値が1増えます"
+          accessibilityRole="button"
+        >
+          {loading ? (
+            <ActivityIndicator color="#FFFFFF" size={24} />
+          ) : (
+            <MaterialCommunityIcons name={iconName as any} size={32} color="#FFFFFF" />
+          )}
+        </TouchableOpacity>
+      </ThemedView>
     </ThemedView>
   );
 }
@@ -122,6 +148,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     textAlign: 'center',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   button: {
     width: 70,
@@ -139,11 +170,17 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     textAlign: 'center',
+    minWidth: 32,
+  },
+  compactContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   compactButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 3,

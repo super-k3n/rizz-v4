@@ -23,8 +23,8 @@ import { resetCounters } from '@/services/reset-counters';
 function HomeScreen() {
   const { user, signOut, isLoading: authLoading } = useAuth();
   const { profile } = useProfile();
-  const { counters, loading: counterLoading, resetCounters: resetCounterContext } = useCounter();
-  const { incrementCounter, loading: recordLoading, error, isOnline } = useRecord();
+  const { counters, loading: counterLoading, resetCounters: resetCounterContext, incrementCounter, decrementCounter } = useCounter();
+  const { incrementCounter: recordIncrementCounter, loading: recordLoading, error, isOnline, dailyRecords } = useRecord();
   const { getGoal, loading: goalLoading } = useGoal();
   const [targets, setTargets] = useState({
     approached: 0,
@@ -72,7 +72,14 @@ function HomeScreen() {
   const handleCounterIncrement = (type: CounterType) => {
     const today = getCurrentDate();
     console.log(`カウンタークリック - タイプ: ${type}, 日付: ${today}`);
-    incrementCounter(type, today);
+    recordIncrementCounter(type, today, 1);
+  };
+
+  // カウンターボタンのデクリメントハンドラ
+  const handleCounterDecrement = (type: CounterType) => {
+    const today = getCurrentDate();
+    console.log(`カウンターデクリメント - タイプ: ${type}, 日付: ${today}`);
+    recordIncrementCounter(type, today, -1);
   };
 
   // ログアウト処理
@@ -91,43 +98,23 @@ function HomeScreen() {
     router.push('/goal-settings' as any);
   };
 
-  // カウンターリセット処理
-  const handleResetCounters = async () => {
-    try {
-      const result = await resetCounters();
-      if (result.success && result.data) {
-        // カウンターリセット後に画面を再読み込み
-        Alert.alert('カウンターリセット', 'DBから最新のデータを取得しました。\n\nカウンター値: ' +
-          `声かけ数: ${result.data.approached}, ` +
-          `連絡先取得: ${result.data.getContact}, ` +
-          `即日デート: ${result.data.instantDate}, ` +
-          `即CV: ${result.data.instantCv}`);
-
-        // CounterContextの状態を直接更新
-        await resetCounterContext();
-
-        // 画面を再読み込み
-        router.replace('/');
-      } else {
-        Alert.alert('エラー', 'カウンターのリセットに失敗しました。\n' + JSON.stringify(result.error));
-      }
-    } catch (error) {
-      console.error('カウンターリセットエラー:', error);
-      Alert.alert('エラー', '予期せぬエラーが発生しました。');
-    }
-  };
-
-  // 目標値を再読み込み
+  // 実績値と目標値を両方再読み込み
   const reloadTargets = async () => {
     try {
+      // 実績値（カウンター）と目標値を両方リセット
+      await resetCounterContext();
       const today = getCurrentDate();
       await loadDailyGoals(today);
-      Alert.alert('成功', '目標値を再読み込みしました');
+      Alert.alert('成功', '実績値と目標値を再読み込みしました');
     } catch (error) {
-      console.error('目標値の再読み込みエラー:', error);
-      Alert.alert('エラー', '目標値の再読み込み中にエラーが発生しました');
+      console.error('再読み込みエラー:', error);
+      Alert.alert('エラー', '再読み込み中にエラーが発生しました');
     }
   };
+
+  // 今日の日付
+  const todayStr = getCurrentDate();
+  const todayRecord = dailyRecords[todayStr] || {};
 
   return (
     <ParallaxScrollView
@@ -187,19 +174,19 @@ function HomeScreen() {
               lightColor="#0A0F23"
               darkColor="#FFFFFF"
             >
-              声かけ数: {counters.approached} / {targets.approached}{' '}
+              声かけ数: {todayRecord.approached ?? 0} / {targets.approached}{' '}
               <ThemedText
                 style={[styles.counterLabel, styles.progressText]}
                 lightColor="#D4AF37"
                 darkColor="#D4AF37"
               >
-                ({Math.round((counters.approached / (targets.approached || 1)) * 100)}%)
+                ({Math.round(((todayRecord.approached ?? 0) / (targets.approached || 1)) * 100)}%)
               </ThemedText>
             </ThemedText>
             <View style={styles.progressContainer}>
               <ProgressDisplay
                 type="approached"
-                current={counters.approached}
+                current={todayRecord.approached ?? 0}
                 target={targets.approached}
                 showLabel={false}
               />
@@ -207,9 +194,10 @@ function HomeScreen() {
           </ThemedView>
           <CounterButton
             type="approached"
-            count={counters.approached}
+            count={todayRecord.approached ?? 0}
             onIncrement={() => handleCounterIncrement('approached')}
-            loading={counterLoading.approached || recordLoading}
+            onDecrement={() => handleCounterDecrement('approached')}
+            loading={recordLoading.approached}
             compact={true}
           />
         </ThemedView>
@@ -222,19 +210,19 @@ function HomeScreen() {
               lightColor="#0A0F23"
               darkColor="#FFFFFF"
             >
-              バンゲ数: {counters.getContact} / {targets.getContact}{' '}
+              バンゲ数: {todayRecord.get_contact ?? 0} / {targets.getContact}{' '}
               <ThemedText
                 style={[styles.counterLabel, styles.progressText]}
                 lightColor="#D4AF37"
                 darkColor="#D4AF37"
               >
-                ({Math.round((counters.getContact / (targets.getContact || 1)) * 100)}%)
+                ({Math.round(((todayRecord.get_contact ?? 0) / (targets.getContact || 1)) * 100)}%)
               </ThemedText>
             </ThemedText>
             <View style={styles.progressContainer}>
               <ProgressDisplay
                 type="getContact"
-                current={counters.getContact}
+                current={todayRecord.get_contact ?? 0}
                 target={targets.getContact}
                 showLabel={false}
               />
@@ -242,9 +230,10 @@ function HomeScreen() {
           </ThemedView>
           <CounterButton
             type="getContact"
-            count={counters.getContact}
+            count={todayRecord.get_contact ?? 0}
             onIncrement={() => handleCounterIncrement('getContact')}
-            loading={counterLoading.getContact || recordLoading}
+            onDecrement={() => handleCounterDecrement('getContact')}
+            loading={recordLoading.getContact}
             compact={true}
           />
         </ThemedView>
@@ -257,19 +246,19 @@ function HomeScreen() {
               lightColor="#0A0F23"
               darkColor="#FFFFFF"
             >
-              連れ出し数: {counters.instantDate} / {targets.instantDate}{' '}
+              連れ出し数: {todayRecord.instant_date ?? 0} / {targets.instantDate}{' '}
               <ThemedText
                 style={[styles.counterLabel, styles.progressText]}
                 lightColor="#D4AF37"
                 darkColor="#D4AF37"
               >
-                ({Math.round((counters.instantDate / (targets.instantDate || 1)) * 100)}%)
+                ({Math.round(((todayRecord.instant_date ?? 0) / (targets.instantDate || 1)) * 100)}%)
               </ThemedText>
             </ThemedText>
             <View style={styles.progressContainer}>
               <ProgressDisplay
                 type="instantDate"
-                current={counters.instantDate}
+                current={todayRecord.instant_date ?? 0}
                 target={targets.instantDate}
                 showLabel={false}
               />
@@ -277,9 +266,10 @@ function HomeScreen() {
           </ThemedView>
           <CounterButton
             type="instantDate"
-            count={counters.instantDate}
+            count={todayRecord.instant_date ?? 0}
             onIncrement={() => handleCounterIncrement('instantDate')}
-            loading={counterLoading.instantDate || recordLoading}
+            onDecrement={() => handleCounterDecrement('instantDate')}
+            loading={recordLoading.instantDate}
             compact={true}
           />
         </ThemedView>
@@ -292,19 +282,19 @@ function HomeScreen() {
               lightColor="#0A0F23"
               darkColor="#FFFFFF"
             >
-              即数: {counters.instantCv} / {targets.instantCv}{' '}
+              即数: {todayRecord.instant_cv ?? 0} / {targets.instantCv}{' '}
               <ThemedText
                 style={[styles.counterLabel, styles.progressText]}
                 lightColor="#D4AF37"
                 darkColor="#D4AF37"
               >
-                ({Math.round((counters.instantCv / (targets.instantCv || 1)) * 100)}%)
+                ({Math.round(((todayRecord.instant_cv ?? 0) / (targets.instantCv || 1)) * 100)}%)
               </ThemedText>
             </ThemedText>
             <View style={styles.progressContainer}>
               <ProgressDisplay
                 type="instantCv"
-                current={counters.instantCv}
+                current={todayRecord.instant_cv ?? 0}
                 target={targets.instantCv}
                 showLabel={false}
               />
@@ -312,9 +302,10 @@ function HomeScreen() {
           </ThemedView>
           <CounterButton
             type="instantCv"
-            count={counters.instantCv}
+            count={todayRecord.instant_cv ?? 0}
             onIncrement={() => handleCounterIncrement('instantCv')}
-            loading={counterLoading.instantCv || recordLoading}
+            onDecrement={() => handleCounterDecrement('instantCv')}
+            loading={recordLoading.instantCv}
             compact={true}
           />
         </ThemedView>
@@ -335,47 +326,17 @@ function HomeScreen() {
 
       {/* 開発中は認証情報も表示しておく */}
       <ThemedView style={styles.devContainer}>
-        <ThemedText type="subtitle">認証情報（開発用）</ThemedText>
         {user ? (
           <ThemedView>
-            <ThemedText>メールアドレス: {user.email}</ThemedText>
-            <ThemedText>ユーザーID: {user.id}</ThemedText>
-            <ThemedText>目標値: {targets.approached}</ThemedText>
-            <Button
-              mode="contained"
-              buttonColor="#800020"
-              textColor='#FFF'
-              onPress={handleLogout}
-              loading={authLoading}
-              style={styles.logoutButton}
-            >
-              ログアウト
-            </Button>
-            <Button
-              mode="outlined"
-              onPress={handleResetCounters}
-              style={{marginTop: 8, borderColor: '#5c6bc0'}}
-            >
-              カウンター再読込
-            </Button>
             <Button
               mode="outlined"
               onPress={reloadTargets}
               style={{marginTop: 8, borderColor: '#5c6bc0'}}
             >
-              目標値再読込
-            </Button>
-            <Button
-              mode="outlined"
-              onPress={debugAuthAndProfile}
-              style={{marginTop: 8, borderColor: '#333'}}
-            >
-              認証診断実行
+              実績値・目標値再読込
             </Button>
           </ThemedView>
-        ) : (
-          <ThemedText>ログインしていません</ThemedText>
-        )}
+        ) : null}
       </ThemedView>
     </ParallaxScrollView>
   );

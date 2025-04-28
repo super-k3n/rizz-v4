@@ -23,7 +23,7 @@ interface ChangeQueueItem {
 // RecordContextの型定義
 interface RecordContextType {
   dailyRecords: Record<string, DailyRecordData>;
-  loading: boolean;
+  loading: Record<CounterType, boolean>;
   error: string | null;
   isOnline: boolean;
   fetchDailyRecord: (date: string) => Promise<DailyRecordData | null>;
@@ -39,7 +39,12 @@ const RecordContext = createContext<RecordContextType | undefined>(undefined);
 export function RecordProvider({ children }: { children: React.ReactNode }) {
   const { incrementCounter: incrementCounterLocal } = useCounter();
   const [dailyRecords, setDailyRecords] = useState<Record<string, DailyRecordData>>({});
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<Record<CounterType, boolean>>({
+    approached: false,
+    getContact: false,
+    instantDate: false,
+    instantCv: false,
+  });
   const [error, setError] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState(true);
 
@@ -132,13 +137,13 @@ export function RecordProvider({ children }: { children: React.ReactNode }) {
     // オフラインの場合は何もしない
     if (!isOnline) return;
 
-    setLoading(true);
+    setLoading(prev => ({ ...prev, approached: true, getContact: true, instantDate: true, instantCv: true }));
     setError(null);
 
     try {
       const queue = await getChangeQueue();
       if (queue.length === 0) {
-        setLoading(false);
+        setLoading(prev => ({ ...prev, approached: false, getContact: false, instantDate: false, instantCv: false }));
         return;
       }
 
@@ -157,7 +162,7 @@ export function RecordProvider({ children }: { children: React.ReactNode }) {
           if (error) {
             console.error('同期エラー:', error);
             setError(`同期エラー: ${error.message}`);
-            setLoading(false);
+            setLoading(prev => ({ ...prev, [type]: false }));
             return; // エラーが発生した場合は中断
           }
 
@@ -175,25 +180,25 @@ export function RecordProvider({ children }: { children: React.ReactNode }) {
       console.error('同期エラー:', err);
       setError(`同期エラー: ${err.message || 'Unknown error'}`);
     } finally {
-      setLoading(false);
+      setLoading(prev => ({ ...prev, approached: false, getContact: false, instantDate: false, instantCv: false }));
     }
   }, [isOnline, getChangeQueue, saveChangeQueue, updateCache]);
 
   // 特定日の記録を取得
   const fetchDailyRecord = useCallback(async (date: string): Promise<DailyRecordData | null> => {
-    setLoading(true);
+    setLoading(prev => ({ ...prev, approached: true, getContact: true, instantDate: true, instantCv: true }));
     setError(null);
 
     try {
       // キャッシュにある場合はキャッシュから返す
       if (dailyRecords[date]) {
-        setLoading(false);
+        setLoading(prev => ({ ...prev, approached: false, getContact: false, instantDate: false, instantCv: false }));
         return dailyRecords[date];
       }
 
       // オフラインの場合はnullを返す
       if (!isOnline) {
-        setLoading(false);
+        setLoading(prev => ({ ...prev, approached: false, getContact: false, instantDate: false, instantCv: false }));
         return null;
       }
 
@@ -202,7 +207,7 @@ export function RecordProvider({ children }: { children: React.ReactNode }) {
 
       if (error) {
         setError(error.message);
-        setLoading(false);
+        setLoading(prev => ({ ...prev, approached: false, getContact: false, instantDate: false, instantCv: false }));
         return null;
       }
 
@@ -211,12 +216,12 @@ export function RecordProvider({ children }: { children: React.ReactNode }) {
         await updateCache(date, data);
       }
 
-      setLoading(false);
+      setLoading(prev => ({ ...prev, approached: false, getContact: false, instantDate: false, instantCv: false }));
       return data;
     } catch (err: any) {
       console.error('記録取得エラー:', err);
       setError(err.message || 'Unknown error');
-      setLoading(false);
+      setLoading(prev => ({ ...prev, approached: false, getContact: false, instantDate: false, instantCv: false }));
       return null;
     }
   }, [isOnline, dailyRecords, updateCache]);
@@ -228,7 +233,7 @@ export function RecordProvider({ children }: { children: React.ReactNode }) {
     count: number = 1
   ) => {
     console.log(`RecordContext.incrementCounter - タイプ: ${type}, 日付: ${date}, 値: ${count}`);
-    setLoading(true);
+    setLoading(prev => ({ ...prev, [type]: true }));
     setError(null);
 
     try {
@@ -280,17 +285,17 @@ export function RecordProvider({ children }: { children: React.ReactNode }) {
           instantCv: updatedRecord.instant_cv || 0,
         }));
 
-        setLoading(false);
+        setLoading(prev => ({ ...prev, [type]: false }));
         return;
       }
 
       // オンラインの場合はSupabaseに直接更新
-      console.log(`RecordContext.incrementCounter - オンラインモードで実行: ${date}`); 
+      console.log(`RecordContext.incrementCounter - オンラインモードで実行: ${date}`);
       const { data, error } = await recordService.incrementCounter(type, date, count);
 
       if (error) {
         setError(error.message);
-        setLoading(false);
+        setLoading(prev => ({ ...prev, [type]: false }));
         return;
       }
 
@@ -312,7 +317,7 @@ export function RecordProvider({ children }: { children: React.ReactNode }) {
       console.error('カウンター更新エラー:', err);
       setError(err.message || 'Unknown error');
     } finally {
-      setLoading(false);
+      setLoading(prev => ({ ...prev, [type]: false }));
     }
   }, [isOnline, incrementCounterLocal, addToChangeQueue, dailyRecords, updateCache]);
 
