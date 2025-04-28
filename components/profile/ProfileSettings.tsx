@@ -5,6 +5,7 @@ import { Formik } from 'formik';
 import * as Yup from 'yup';
 import { ThemedText } from '../ThemedText';
 import { useProfile } from '@/contexts/ProfileContext';
+import * as Updates from 'expo-updates';
 
 const ProfileSchema = Yup.object().shape({
   name: Yup.string()
@@ -44,9 +45,6 @@ const ProfileSchema = Yup.object().shape({
         }
       }
     ),
-  theme_preference: Yup.mixed<'light' | 'dark'>()
-    .oneOf(['light', 'dark'])
-    .required(),
   currentPassword: Yup.string()
     .when(['newPassword', 'confirmPassword'], {
       is: (newPassword: string, confirmPassword: string) => newPassword || confirmPassword,
@@ -63,18 +61,39 @@ const ProfileSchema = Yup.object().shape({
 });
 
 export const ProfileSettings: React.FC = () => {
-  const { profile, updateProfile, changePassword, loading, error } = useProfile();
+  const { profile, updateProfile, changePassword, updateTheme, loading, error } = useProfile();
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [themeUpdating, setThemeUpdating] = useState(false);
 
   const initialValues = useMemo(() => ({
     name: profile?.name || '',
     x_url: profile?.x_url || '',
-    theme_preference: profile?.theme_preference || 'dark',
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
   }), [profile]);
+
+  // テーマ切替ハンドラ
+  const handleThemeToggle = async () => {
+    if (!profile) return;
+    const newTheme = profile.theme_preference === 'dark' ? 'light' : 'dark';
+    try {
+      setThemeUpdating(true);
+      await updateTheme(newTheme);
+      setSnackbarMessage(`テーマを${newTheme === 'dark' ? 'ダーク' : 'ライト'}モードに変更しました`);
+      setSnackbarVisible(true);
+      // 変更が反映されるようにリロード
+      setTimeout(async () => {
+        await Updates.reloadAsync();
+      }, 500);
+    } catch (e: any) {
+      setSnackbarMessage('テーマの変更に失敗しました');
+      setSnackbarVisible(true);
+    } finally {
+      setThemeUpdating(false);
+    }
+  };
 
   if (loading && !profile) {
     return (
@@ -110,13 +129,10 @@ export const ProfileSettings: React.FC = () => {
           enableReinitialize
           onSubmit={async (values, { setSubmitting, resetForm }) => {
             try {
-              // プロフィール情報の更新
               await updateProfile({
                 name: values.name,
                 x_url: values.x_url,
-                theme_preference: values.theme_preference,
               });
-              // パスワード欄が入力されていればパスワードも更新
               if (values.newPassword) {
                 await changePassword(values.currentPassword, values.newPassword);
               }
@@ -131,7 +147,7 @@ export const ProfileSettings: React.FC = () => {
             }
           }}
         >
-          {({ handleChange, handleBlur, handleSubmit, values, errors, touched, isSubmitting, dirty, setFieldValue }) => (
+          {({ handleChange, handleBlur, handleSubmit, values, errors, touched, isSubmitting, dirty }) => (
             <View>
               <ThemedText type="subtitle" style={styles.sectionTitle}>ユーザー名</ThemedText>
               <TextInput
@@ -163,18 +179,6 @@ export const ProfileSettings: React.FC = () => {
               {touched.x_url && errors.x_url && (
                 <ThemedText style={styles.errorText}>{errors.x_url}</ThemedText>
               )}
-
-              <Divider style={styles.divider} />
-
-              <ThemedText type="subtitle" style={styles.sectionTitle}>テーマ設定</ThemedText>
-              <View style={styles.themeRow}>
-                <ThemedText style={styles.themeLabel}>ダークモード (ON/OFF)</ThemedText>
-                <Switch
-                  value={values.theme_preference === 'dark'}
-                  onValueChange={(v) => setFieldValue('theme_preference', v ? 'dark' : 'light')}
-                  disabled={isSubmitting || loading}
-                />
-              </View>
 
               <Divider style={styles.divider} />
 
@@ -234,6 +238,23 @@ export const ProfileSettings: React.FC = () => {
           )}
         </Formik>
 
+        <Divider style={styles.divider} />
+
+        {/* テーマ設定：一時的に非表示 */}
+        {false && (
+          <View style={styles.themeSection}>
+            <ThemedText type="subtitle" style={styles.sectionTitle}>テーマ設定</ThemedText>
+            <View style={styles.themeRow}>
+              <ThemedText style={styles.themeLabel}>ダークモード (ON/OFF)</ThemedText>
+              <Switch
+                value={profile?.theme_preference === 'dark'}
+                onValueChange={handleThemeToggle}
+                disabled={themeUpdating || loading}
+              />
+            </View>
+          </View>
+        )}
+
         <Snackbar
           visible={snackbarVisible}
           onDismiss={() => setSnackbarVisible(false)}
@@ -274,6 +295,10 @@ const styles = StyleSheet.create({
   },
   input: {
     marginBottom: 8,
+  },
+  themeSection: {
+    marginTop: 32,
+    marginBottom: 16,
   },
   themeRow: {
     flexDirection: 'row',
