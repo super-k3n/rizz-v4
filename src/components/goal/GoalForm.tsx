@@ -109,7 +109,6 @@ const GoalForm: React.FC<GoalFormProps> = ({ initialPeriod = 'daily' }) => {
           keyboardType="numeric"
           error={!validateNumber(approached)}
           style={styles.input}
-          textColor='#0A0F23'
         />
         {!validateNumber(approached) && (
           <HelperText type="error">有効な数値を入力してください</HelperText>
@@ -196,7 +195,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   input: {
-    backgroundColor: '#ddd',
+    // backgroundColor: '#ddd',
   },
   button: {
     marginTop: 24,
