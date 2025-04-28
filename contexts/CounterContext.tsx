@@ -39,28 +39,28 @@ const COUNTERS_STORAGE_KEY = 'rizz_counters';
 // デフォルトの目標値
 const defaultTargets: PeriodicTargetsState = {
   daily: {
-    approached: 10,
-    getContact: 2,
-    instantDate: 1,
-    instantCv: 1,
+    approached: 0,
+    getContact: 0,
+    instantDate: 0,
+    instantCv: 0,
   },
   weekly: {
-    approached: 50,
-    getContact: 10,
-    instantDate: 3,
-    instantCv: 1,
+    approached: 0,
+    getContact: 0,
+    instantDate: 0,
+    instantCv: 0,
   },
   monthly: {
-    approached: 100,
-    getContact: 12,
-    instantDate: 4,
-    instantCv: 2,
+    approached: 0,
+    getContact: 0,
+    instantDate: 0,
+    instantCv: 0,
   },
   yearly: {
-    approached: 365,
-    getContact: 100,
-    instantDate: 30,
-    instantCv: 12,
+    approached: 0,
+    getContact: 0,
+    instantDate: 0,
+    instantCv: 0,
   },
 };
 

@@ -91,41 +91,17 @@ function HomeScreen() {
     router.push('/goal-settings' as any);
   };
 
-  // カウンターリセット処理
-  const handleResetCounters = async () => {
-    try {
-      const result = await resetCounters();
-      if (result.success && result.data) {
-        // カウンターリセット後に画面を再読み込み
-        Alert.alert('カウンターリセット', 'DBから最新のデータを取得しました。\n\nカウンター値: ' +
-          `声かけ数: ${result.data.approached}, ` +
-          `連絡先取得: ${result.data.getContact}, ` +
-          `即日デート: ${result.data.instantDate}, ` +
-          `即CV: ${result.data.instantCv}`);
-
-        // CounterContextの状態を直接更新
-        await resetCounterContext();
-
-        // 画面を再読み込み
-        router.replace('/');
-      } else {
-        Alert.alert('エラー', 'カウンターのリセットに失敗しました。\n' + JSON.stringify(result.error));
-      }
-    } catch (error) {
-      console.error('カウンターリセットエラー:', error);
-      Alert.alert('エラー', '予期せぬエラーが発生しました。');
-    }
-  };
-
-  // 目標値を再読み込み
+  // 実績値と目標値を両方再読み込み
   const reloadTargets = async () => {
     try {
+      // 実績値（カウンター）と目標値を両方リセット
+      await resetCounterContext();
       const today = getCurrentDate();
       await loadDailyGoals(today);
-      Alert.alert('成功', '目標値を再読み込みしました');
+      Alert.alert('成功', '実績値と目標値を再読み込みしました');
     } catch (error) {
-      console.error('目標値の再読み込みエラー:', error);
-      Alert.alert('エラー', '目標値の再読み込み中にエラーが発生しました');
+      console.error('再読み込みエラー:', error);
+      Alert.alert('エラー', '再読み込み中にエラーが発生しました');
     }
   };
 
@@ -335,47 +311,17 @@ function HomeScreen() {
 
       {/* 開発中は認証情報も表示しておく */}
       <ThemedView style={styles.devContainer}>
-        <ThemedText type="subtitle">認証情報（開発用）</ThemedText>
         {user ? (
           <ThemedView>
-            <ThemedText>メールアドレス: {user.email}</ThemedText>
-            <ThemedText>ユーザーID: {user.id}</ThemedText>
-            <ThemedText>目標値: {targets.approached}</ThemedText>
-            <Button
-              mode="contained"
-              buttonColor="#800020"
-              textColor='#FFF'
-              onPress={handleLogout}
-              loading={authLoading}
-              style={styles.logoutButton}
-            >
-              ログアウト
-            </Button>
-            <Button
-              mode="outlined"
-              onPress={handleResetCounters}
-              style={{marginTop: 8, borderColor: '#5c6bc0'}}
-            >
-              カウンター再読込
-            </Button>
             <Button
               mode="outlined"
               onPress={reloadTargets}
               style={{marginTop: 8, borderColor: '#5c6bc0'}}
             >
-              目標値再読込
-            </Button>
-            <Button
-              mode="outlined"
-              onPress={debugAuthAndProfile}
-              style={{marginTop: 8, borderColor: '#333'}}
-            >
-              認証診断実行
+              実績値・目標値再読込
             </Button>
           </ThemedView>
-        ) : (
-          <ThemedText>ログインしていません</ThemedText>
-        )}
+        ) : null}
       </ThemedView>
     </ParallaxScrollView>
   );
