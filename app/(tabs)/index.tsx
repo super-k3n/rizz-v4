@@ -197,7 +197,7 @@ function HomeScreen() {
             count={todayRecord.approached ?? 0}
             onIncrement={() => handleCounterIncrement('approached')}
             onDecrement={() => handleCounterDecrement('approached')}
-            loading={recordLoading}
+            loading={recordLoading.approached}
             compact={true}
           />
         </ThemedView>
@@ -233,7 +233,7 @@ function HomeScreen() {
             count={todayRecord.get_contact ?? 0}
             onIncrement={() => handleCounterIncrement('getContact')}
             onDecrement={() => handleCounterDecrement('getContact')}
-            loading={recordLoading}
+            loading={recordLoading.getContact}
             compact={true}
           />
         </ThemedView>
@@ -269,7 +269,7 @@ function HomeScreen() {
             count={todayRecord.instant_date ?? 0}
             onIncrement={() => handleCounterIncrement('instantDate')}
             onDecrement={() => handleCounterDecrement('instantDate')}
-            loading={recordLoading}
+            loading={recordLoading.instantDate}
             compact={true}
           />
         </ThemedView>
@@ -305,7 +305,7 @@ function HomeScreen() {
             count={todayRecord.instant_cv ?? 0}
             onIncrement={() => handleCounterIncrement('instantCv')}
             onDecrement={() => handleCounterDecrement('instantCv')}
-            loading={recordLoading}
+            loading={recordLoading.instantCv}
             compact={true}
           />
         </ThemedView>
