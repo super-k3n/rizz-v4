@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { StyleSheet, View, ScrollView } from 'react-native';
-import { Divider, Button, TextInput, Snackbar, Switch } from 'react-native-paper';
+import { Divider, Button, TextInput, Snackbar, Switch, RadioButton } from 'react-native-paper';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
 import { ThemedText } from '../ThemedText';
@@ -65,6 +65,8 @@ export const ProfileSettings: React.FC = () => {
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [themeUpdating, setThemeUpdating] = useState(false);
+  const [language, setLanguage] = useState(profile?.language ?? 0);
+  const [languageUpdating, setLanguageUpdating] = useState(false);
 
   const initialValues = useMemo(() => ({
     name: profile?.name || '',
@@ -92,6 +94,26 @@ export const ProfileSettings: React.FC = () => {
       setSnackbarVisible(true);
     } finally {
       setThemeUpdating(false);
+    }
+  };
+
+  // 言語切替ハンドラ
+  const handleLanguageChange = async (value: number) => {
+    if (!profile) return;
+    try {
+      setLanguageUpdating(true);
+      setLanguage(value);
+      await updateProfile({ language: value });
+      setSnackbarMessage(`言語を${value === 0 ? '日本語' : '英語'}に変更しました。リロードします...`);
+      setSnackbarVisible(true);
+      setTimeout(async () => {
+        await Updates.reloadAsync();
+      }, 500);
+    } catch (e: any) {
+      setSnackbarMessage('言語の変更に失敗しました');
+      setSnackbarVisible(true);
+    } finally {
+      setLanguageUpdating(false);
     }
   };
 
@@ -237,6 +259,20 @@ export const ProfileSettings: React.FC = () => {
             </View>
           )}
         </Formik>
+
+        <Divider style={styles.divider} />
+        <ThemedText type="subtitle" style={styles.sectionTitle}>言語設定</ThemedText>
+        <RadioButton.Group
+          onValueChange={value => handleLanguageChange(Number(value))}
+          value={String(language)}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+            <RadioButton value="0" disabled={languageUpdating} />
+            <ThemedText>日本語</ThemedText>
+            <RadioButton value="1" disabled={languageUpdating} style={{ marginLeft: 16 }} />
+            <ThemedText>English</ThemedText>
+          </View>
+        </RadioButton.Group>
 
         <Divider style={styles.divider} />
 
