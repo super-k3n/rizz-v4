@@ -1,20 +1,12 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import * as Localization from 'expo-localization';
+import ja from '../../locales/ja.json';
+import en from '../../locales/en.json';
 
 const resources = {
-  ja: {
-    translation: {
-      greeting: 'こんにちは',
-      // 他の日本語キー
-    },
-  },
-  en: {
-    translation: {
-      greeting: 'Hello',
-      // 他の英語キー
-    },
-  },
+  ja: { translation: ja },
+  en: { translation: en },
 };
 
 i18n
