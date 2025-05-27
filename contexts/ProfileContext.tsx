@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { Profile, ProfileUpdateData } from '../src/types/profile';
 import * as profileService from '../services/profile';
 import { useAuth } from './AuthContext';
+import i18n from '../src/libs/i18n';
 
 interface ProfileContextType {
   profile: Profile | null;
@@ -44,21 +45,36 @@ export const ProfileProvider: React.FC<ProfileProviderProps> = ({ children }) =>
       setLoading(true);
       setError(null);
       const profileData = await profileService.getProfile();
-      
+
+      let currentProfile = profileData; // 現在処理中のプロファイルデータ
+
       // プロフィールのテーマ設定がない場合、ダークモードをデフォルトに設定
-      if (profileData && profileData.theme_preference !== 'dark') {
+      if (currentProfile && currentProfile.theme_preference !== 'dark') {
         try {
-          await profileService.updateTheme('dark');
-          const updatedProfile = await profileService.getProfile();
-          setProfile(updatedProfile);
+          // テーマ更新が成功した場合、更新されたプロファイルデータを反映
+          currentProfile = await profileService.updateTheme('dark');
+          console.log('Default theme set to dark.');
         } catch (themeErr) {
           console.error('テーマ設定エラー:', themeErr);
-          // テーマ更新エラーは無視して元のプロフィールを設定
-          setProfile(profileData);
+          // エラーが発生しても処理を続行し、元のprofileDataを使う
+        }
+      }
+
+      // ★ここが修正点2: プロフィールロード時にi18nの言語を設定
+      if (currentProfile && currentProfile.language !== null) {
+        const langCode = currentProfile.language === 0 ? 'ja' : 'en';
+        if (i18n.language !== langCode) { // i18nの現在の言語と異なる場合のみ切り替える
+          await i18n.changeLanguage(langCode);
+          console.log(`i18n language set from profile: ${langCode}`);
         }
       } else {
-        setProfile(profileData);
+        // profile.languageがnullの場合、デバイスのロケールに従うか、特定のデフォルトを設定することも可能
+        // 現在のi18n.tsの設定 (Localization.locale) を尊重するため、ここでは特別な処理は行わない
+        console.log('Profile language is null, using default i18n language.');
       }
+
+      setProfile(currentProfile); // 最終的なプロファイルをセット
+
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Unknown error occurred'));
     } finally {
@@ -67,8 +83,9 @@ export const ProfileProvider: React.FC<ProfileProviderProps> = ({ children }) =>
   };
 
   useEffect(() => {
+    // セッションが変更されたときにプロフィールをリフレッシュ
     refreshProfile();
-  }, [session]);
+  }, [session]); // sessionを依存配列に追加
 
   const updateProfile = async (data: ProfileUpdateData): Promise<void> => {
     try {

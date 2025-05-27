@@ -5,6 +5,7 @@ export interface Profile {
   email: string | null;
   x_url: string | null;
   theme_preference: 'light' | 'dark';
+  language: number; // 0:日本語, 1:英語
   created_at: string;
   updated_at: string;
 }
@@ -14,6 +15,7 @@ export interface ProfileUpdateData {
   email?: string;
   x_url?: string | null;
   theme_preference?: 'light' | 'dark';
+  language?: number; // 0:日本語, 1:英語
 }
 
 export interface PasswordChangeData {

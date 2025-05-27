@@ -5,6 +5,7 @@ import { ja } from 'date-fns/locale';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import type { CounterType } from '@/lib/types/record';
+import { useTranslation } from 'react-i18next';
 
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
@@ -18,6 +19,8 @@ import { useProfile } from '@/contexts/ProfileContext';
 import { useGoal } from '@/contexts/GoalContext';
 import { debugAuthAndProfile } from '@/services/auth-debug';
 import { resetCounters } from '@/services/reset-counters';
+import * as recordService from '@/services/record';
+import * as dailyGoalsService from '@/src/services/daily-goals';
 
 // 明示的なデフォルトエクスポート
 function HomeScreen() {
@@ -25,26 +28,43 @@ function HomeScreen() {
   const { profile } = useProfile();
   const { counters, loading: counterLoading, resetCounters: resetCounterContext, incrementCounter, decrementCounter } = useCounter();
   const { incrementCounter: recordIncrementCounter, loading: recordLoading, error, isOnline, dailyRecords } = useRecord();
-  const { getGoal, loading: goalLoading } = useGoal();
+  const { getGoal, goals } = useGoal();
   const [targets, setTargets] = useState({
     approached: 0,
     getContact: 0,
     instantDate: 0,
     instantCv: 0,
   });
+  const [todayRecord, setTodayRecord] = useState({
+    approached: 0,
+    get_contact: 0,
+    instant_date: 0,
+    instant_cv: 0,
+  });
   const today = new Date();
-  const formattedDate = format(today, 'yyyy年MM月dd日（EEEE）', { locale: ja });
+  const { t } = useTranslation();
+  const formattedDate = format(today, t('date_format', { defaultValue: 'yyyy年MM月dd日（EEEE）' }), { locale: ja });
 
   // 画面が表示されたとき、カウンターと目標値をリセット
   useEffect(() => {
-    // 現在の日付を取得
-    const today = new Date().toISOString().split('T')[0];
-    console.log(`ホーム画面表示 - 現在の日付: ${today}`);
-
-    // カウンターと目標値をリセット
-    resetCounterContext();
-    loadDailyGoals(today);
+    const init = async () => {
+      const today = new Date().toISOString().split('T')[0];
+      await reloadTargets(today);
+    };
+    init();
   }, []);
+
+  // GoalContextのgoals.dailyが変化したらtargets stateを同期
+  useEffect(() => {
+    if (goals && goals.daily) {
+      setTargets({
+        approached: goals.daily.approached ?? 0,
+        getContact: goals.daily.getContact ?? 0,
+        instantDate: goals.daily.instantDate ?? 0,
+        instantCv: goals.daily.instantCv ?? 0,
+      });
+    }
+  }, [goals.daily]);
 
   // 日次目標を読み込む
   const loadDailyGoals = async (date: string) => {
@@ -52,13 +72,28 @@ function HomeScreen() {
       const goal = await getGoal('daily', date);
       if (goal) {
         setTargets({
-          approached: goal.approached,
-          getContact: goal.getContact,
-          instantDate: goal.instantDate,
-          instantCv: goal.instantCv,
+          approached: goal.approached ?? 0,
+          getContact: goal.getContact ?? 0,
+          instantDate: goal.instantDate ?? 0,
+          instantCv: goal.instantCv ?? 0,
+        });
+      } else {
+        // デフォルト値をセット
+        setTargets({
+          approached: 0,
+          getContact: 0,
+          instantDate: 0,
+          instantCv: 0,
         });
       }
     } catch (error) {
+      // エラー時もデフォルト値をセット
+      setTargets({
+        approached: 0,
+        getContact: 0,
+        instantDate: 0,
+        instantCv: 0,
+      });
       console.error('Failed to load daily goals:', error);
     }
   };
@@ -69,27 +104,40 @@ function HomeScreen() {
   };
 
   // カウンターボタンのクリックハンドラ
-  const handleCounterIncrement = (type: CounterType) => {
+  const handleCounterIncrement = async (type: CounterType) => {
     const today = getCurrentDate();
-    console.log(`カウンタークリック - タイプ: ${type}, 日付: ${today}`);
-    recordIncrementCounter(type, today, 1);
+    await recordIncrementCounter(type, today, 1);
+    // DBから最新値を取得してtodayRecordを更新
+    const { data: updated } = await recordService.getDailyRecord(today);
+    setTodayRecord({
+      approached: updated?.approached ?? 0,
+      get_contact: updated?.get_contact ?? 0,
+      instant_date: updated?.instant_date ?? 0,
+      instant_cv: updated?.instant_cv ?? 0,
+    });
   };
 
   // カウンターボタンのデクリメントハンドラ
-  const handleCounterDecrement = (type: CounterType) => {
+  const handleCounterDecrement = async (type: CounterType) => {
     const today = getCurrentDate();
-    console.log(`カウンターデクリメント - タイプ: ${type}, 日付: ${today}`);
-    recordIncrementCounter(type, today, -1);
+    await recordIncrementCounter(type, today, -1);
+    const { data: updated } = await recordService.getDailyRecord(today);
+    setTodayRecord({
+      approached: updated?.approached ?? 0,
+      get_contact: updated?.get_contact ?? 0,
+      instant_date: updated?.instant_date ?? 0,
+      instant_cv: updated?.instant_cv ?? 0,
+    });
   };
 
   // ログアウト処理
   const handleLogout = async () => {
     try {
       await signOut();
-      console.log('ログアウト成功');
+      console.log(t('logout_success'));
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'ログアウト中にエラーが発生しました';
-      Alert.alert('エラー', errorMessage);
+      const errorMessage = error instanceof Error ? error.message : t('logout_error');
+      Alert.alert(t('error'), errorMessage);
     }
   };
 
@@ -99,22 +147,51 @@ function HomeScreen() {
   };
 
   // 実績値と目標値を両方再読み込み
-  const reloadTargets = async () => {
+  const reloadTargets = async (dateParam?: string) => {
     try {
-      // 実績値（カウンター）と目標値を両方リセット
-      await resetCounterContext();
-      const today = getCurrentDate();
-      await loadDailyGoals(today);
-      Alert.alert('成功', '実績値と目標値を再読み込みしました');
+      const today = dateParam || getCurrentDate();
+      // daily_records
+      let { data: record } = await recordService.getDailyRecord(today);
+      if (!record) {
+        const res = await recordService.upsertDailyRecord({
+          game_date: today,
+          approached: 0,
+          get_contact: 0,
+          instant_date: 0,
+          instant_cv: 0,
+        });
+        record = res.data;
+      }
+      // daily_goals
+      let { data: goal } = await dailyGoalsService.getDailyGoal(today);
+      if (!goal) {
+        const res = await dailyGoalsService.upsertDailyGoal({
+          target_date: today,
+          approached_target: 0,
+          get_contacts_target: 0,
+          instant_dates_target: 0,
+          instant_cv_target: 0,
+        });
+        goal = res.data;
+      }
+      // UI stateに反映
+      setTargets({
+        approached: goal?.approached_target ?? 0,
+        getContact: goal?.get_contacts_target ?? 0,
+        instantDate: goal?.instant_dates_target ?? 0,
+        instantCv: goal?.instant_cv_target ?? 0,
+      });
+      setTodayRecord({
+        approached: record?.approached ?? 0,
+        get_contact: record?.get_contact ?? 0,
+        instant_date: record?.instant_date ?? 0,
+        instant_cv: record?.instant_cv ?? 0,
+      });
+      Alert.alert(t('success'), t('reload_success'));
     } catch (error) {
-      console.error('再読み込みエラー:', error);
-      Alert.alert('エラー', '再読み込み中にエラーが発生しました');
+      Alert.alert(t('error'), t('reload_error'));
     }
   };
-
-  // 今日の日付
-  const todayStr = getCurrentDate();
-  const todayRecord = dailyRecords[todayStr] || {};
 
   return (
     <ParallaxScrollView
@@ -139,7 +216,7 @@ function HomeScreen() {
             lightColor="#0A0F23"
             darkColor="#FFFFFF"
           >
-            {profile?.name ? `${profile.name}さん` : 'ゲストさん'}
+            {profile?.name ? profile.name : t('greeting_guest')}
           </ThemedText>
         </ThemedView>
       }
@@ -153,7 +230,7 @@ function HomeScreen() {
             darkColor="#C09E5C"
             style={styles.sectionTitle}
           >
-            本日の記録
+            {t('today_record')}
           </ThemedText>
 
           <Button
@@ -162,7 +239,7 @@ function HomeScreen() {
             icon="cog"
             textColor="#C09E5C"
           >
-            目標設定
+            {t('goal_settings')}
           </Button>
         </ThemedView>
 
@@ -174,7 +251,7 @@ function HomeScreen() {
               lightColor="#0A0F23"
               darkColor="#FFFFFF"
             >
-              声かけ数: {todayRecord.approached ?? 0} / {targets.approached}{' '}
+              {t('approached')}: {todayRecord.approached ?? 0} / {targets.approached}{' '}
               <ThemedText
                 style={[styles.counterLabel, styles.progressText]}
                 lightColor="#D4AF37"
@@ -210,7 +287,7 @@ function HomeScreen() {
               lightColor="#0A0F23"
               darkColor="#FFFFFF"
             >
-              バンゲ数: {todayRecord.get_contact ?? 0} / {targets.getContact}{' '}
+              {t('get_contact')}: {todayRecord.get_contact ?? 0} / {targets.getContact}{' '}
               <ThemedText
                 style={[styles.counterLabel, styles.progressText]}
                 lightColor="#D4AF37"
@@ -246,7 +323,7 @@ function HomeScreen() {
               lightColor="#0A0F23"
               darkColor="#FFFFFF"
             >
-              連れ出し数: {todayRecord.instant_date ?? 0} / {targets.instantDate}{' '}
+              {t('instant_date')}: {todayRecord.instant_date ?? 0} / {targets.instantDate}{' '}
               <ThemedText
                 style={[styles.counterLabel, styles.progressText]}
                 lightColor="#D4AF37"
@@ -282,7 +359,7 @@ function HomeScreen() {
               lightColor="#0A0F23"
               darkColor="#FFFFFF"
             >
-              即数: {todayRecord.instant_cv ?? 0} / {targets.instantCv}{' '}
+              {t('instant_cv')}: {todayRecord.instant_cv ?? 0} / {targets.instantCv}{' '}
               <ThemedText
                 style={[styles.counterLabel, styles.progressText]}
                 lightColor="#D4AF37"
@@ -314,13 +391,13 @@ function HomeScreen() {
       {/* ネットワーク状態とエラー表示 */}
       {!isOnline && (
         <ThemedView style={[styles.statusContainer, styles.offlineContainer]}>
-          <ThemedText style={styles.statusText}>オフラインモード: 変更は後で同期されます</ThemedText>
+          <ThemedText style={styles.statusText}>{t('offline_mode')}</ThemedText>
         </ThemedView>
       )}
 
       {error && (
         <ThemedView style={[styles.statusContainer, styles.errorContainer]}>
-          <ThemedText style={styles.statusText}>エラー: {error}</ThemedText>
+          <ThemedText style={styles.statusText}>{t('error')}: {error}</ThemedText>
         </ThemedView>
       )}
 
@@ -330,10 +407,18 @@ function HomeScreen() {
           <ThemedView>
             <Button
               mode="outlined"
-              onPress={reloadTargets}
+              onPress={() => reloadTargets()}
               style={{marginTop: 8, borderColor: '#5c6bc0'}}
             >
-              実績値・目標値再読込
+              {t('reload_button')}
+            </Button>
+            <Button
+              mode="contained"
+              onPress={handleLogout}
+              style={styles.logoutButton}
+              textColor="#FFF"
+            >
+              {t('logout')}
             </Button>
           </ThemedView>
         ) : null}
